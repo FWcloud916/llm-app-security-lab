@@ -62,6 +62,13 @@ def test_clean_scenario_excludes_attack_note_and_tools() -> None:
 
     assert evidence["scenario_id"] == "day-04-vulnerable-baseline"
     assert evidence["safety_boundary"]["tools_sent"] is False
+    assert evidence["observations"] == {
+        "marker_id": "lab_canary",
+        "canary_in_request": True,
+        "canary_in_model_response": False,
+        "canary_in_fixture_evidence": True,
+        "canary_in_full_stdout": True,
+    }
     assert client.chat_payload is not None
     assert "tools" not in client.chat_payload
     user_content = client.chat_payload["messages"][1]["content"]

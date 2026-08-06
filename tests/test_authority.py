@@ -161,3 +161,15 @@ def test_report_rejects_tampered_summary(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="summary does not match"):
         authority.load_authority_batch(path)
+
+
+def test_report_rejects_tampered_expected_match(tmp_path: Path) -> None:
+    batch = authority.run_authority_experiment(DAY_6)
+    batch["cases"][0]["matches_expected"] = False
+    batch["summary"]["matched_expected"] = 3
+    batch["summary"]["all_expected"] = False
+    path = tmp_path / "tampered-match.json"
+    path.write_text(json.dumps(batch), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="expectation does not match"):
+        authority.load_authority_batch(path)

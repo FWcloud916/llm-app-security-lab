@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "experiment_id": "day-06-authority-boundary",
-  "recorded_at": "2026-08-06T12:27:05.502363+00:00",
+  "recorded_at": "2026-08-06T12:34:28.136489+00:00",
   "runner": "deterministic_authority_gate",
   "environment": {
     "model_call": false,
@@ -44,5 +44,5 @@
       "authority_events": 1
     }
   },
-  "raw_evidence_sha256": "2277791d36a144ed3d9af21dbbde3023eeaa36f3619aa4228fd21b9abbdada94"
+  "raw_evidence_sha256": "15c50f30f414aa7acf8ba55bb545c64551aa207016aa98d83d1f2711f97a25cf"
 }

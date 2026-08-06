@@ -330,6 +330,9 @@ def load_authority_batch(path: Path) -> dict[str, Any]:
         raise ValueError("authority evidence must contain cases")
     if not all(isinstance(item, dict) for item in cases):
         raise ValueError("authority evidence cases must be objects")
+    for case in cases:
+        if case.get("matches_expected") is not _matches_expected(case):
+            raise ValueError("stored authority expectation does not match case")
     expected_summary = summarize_cases(cases)
     if batch.get("summary") != expected_summary:
         raise ValueError("stored authority summary does not match cases")

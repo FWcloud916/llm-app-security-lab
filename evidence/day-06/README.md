@@ -60,7 +60,7 @@ cases/missing-identity-forged-allow.json         b072494b8325cd80345677aac9ac18a
 ## Raw evidence integrity
 
 ```text
-results.json  2277791d36a144ed3d9af21dbbde3023eeaa36f3619aa4228fd21b9abbdada94
+results.json  15c50f30f414aa7acf8ba55bb545c64551aa207016aa98d83d1f2711f97a25cf
 ```
 
 The raw file is local-only and ignored. `summary.json` and `authority-report.txt` are the reviewed

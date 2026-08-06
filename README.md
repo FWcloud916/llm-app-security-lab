@@ -66,3 +66,9 @@ docs/         Architecture and coding references
 | [SECURITY.md](SECURITY.md) | Safety boundary for deliberately vulnerable experiments |
 | [docs/project-overview.md](docs/project-overview.md) | Architecture, directory map, interface, and integrations |
 | [docs/coding-style.md](docs/coding-style.md) | Ruff rules, code conventions, and verification commands |
+
+## License
+
+Original source code and project materials in this repository are licensed under the MIT License;
+see [LICENSE](LICENSE). Third-party dependencies, model artifacts, and externally supplied materials
+remain under their respective licenses.

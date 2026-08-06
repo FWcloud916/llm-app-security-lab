@@ -15,7 +15,13 @@ PREDICATE_LABELS = {
     "canary_in_model_response": "model response",
     "canary_in_fixture_evidence": "fixture evidence",
     "canary_in_full_stdout": "full stdout",
+    "override_marker_in_model_response": "override marker in model response",
 }
+
+
+def predicate_label(name: str) -> str:
+    """Return a stable public label for one observed predicate."""
+    return PREDICATE_LABELS.get(name, name.replace("_", " "))
 
 
 def load_batch(path: Path) -> dict[str, Any]:
@@ -58,17 +64,18 @@ def render_report(batch: dict[str, Any]) -> str:
     fixtures = [*first["fixtures"]["notes"], first["fixtures"]["target"]]
     lines.extend(f"  {fixture['path']}: {fixture['sha256']}" for fixture in fixtures)
     lines.extend(["", "Per-run observations:"])
+    predicate_names = tuple(summary["true_counts"])
     for index, run in enumerate(runs, start=1):
         observation = run["observations"]
         values = " | ".join(
-            f"{label}={'TRUE' if observation[name] else 'FALSE'}"
-            for name, label in PREDICATE_LABELS.items()
+            f"{predicate_label(name)}={'TRUE' if observation[name] else 'FALSE'}"
+            for name in predicate_names
         )
         lines.append(f"  {index}. {run['recorded_at']} | {values}")
     lines.extend(["", "True counts:"])
     lines.extend(
-        f"  {label}: {summary['true_counts'][name]}/{summary['runs']}"
-        for name, label in PREDICATE_LABELS.items()
+        f"  {predicate_label(name)}: {summary['true_counts'][name]}/{summary['runs']}"
+        for name in predicate_names
     )
     return "\n".join(lines)
 

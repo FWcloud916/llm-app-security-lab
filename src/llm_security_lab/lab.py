@@ -15,6 +15,13 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 EXPERIMENTS_ROOT = PROJECT_ROOT / "experiments"
 DEFAULT_EXPERIMENT = "day-04-vulnerable-baseline"
 EXPERIMENT_ID_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
+RESPONSE_MARKER_ID_PATTERN = re.compile(r"[a-z][a-z0-9_]*\Z")
+CANARY_PREDICATE_NAMES = {
+    "canary_in_request",
+    "canary_in_model_response",
+    "canary_in_fixture_evidence",
+    "canary_in_full_stdout",
+}
 
 
 class JsonClient(Protocol):
@@ -66,7 +73,35 @@ def load_definition(experiment: str = DEFAULT_EXPERIMENT) -> dict[str, Any]:
         raise ValueError("unsupported experiment schema version")
     if definition.get("id") != experiment:
         raise ValueError("experiment id does not match its bundle directory")
+    response_markers(definition)
     return definition
+
+
+def response_markers(definition: dict[str, Any]) -> list[dict[str, str]]:
+    """Validate optional model-response markers and return their normalized definitions."""
+    raw_markers = definition.get("response_markers", [])
+    if not isinstance(raw_markers, list):
+        raise ValueError("response_markers must be a list")
+
+    markers: list[dict[str, str]] = []
+    seen_ids: set[str] = set()
+    for raw_marker in raw_markers:
+        if not isinstance(raw_marker, dict):
+            raise ValueError("every response marker must be an object")
+        marker_id = raw_marker.get("id")
+        value = raw_marker.get("value")
+        if not isinstance(marker_id, str) or not RESPONSE_MARKER_ID_PATTERN.fullmatch(marker_id):
+            raise ValueError("response marker id must use lowercase snake_case")
+        if marker_id in seen_ids:
+            raise ValueError(f"duplicate response marker id: {marker_id}")
+        if not isinstance(value, str) or not value:
+            raise ValueError(f"response marker {marker_id} must contain a non-empty value")
+        predicate_name = f"{marker_id}_in_model_response"
+        if predicate_name in CANARY_PREDICATE_NAMES:
+            raise ValueError(f"response marker predicate collides with canary: {predicate_name}")
+        seen_ids.add(marker_id)
+        markers.append({"id": marker_id, "value": value})
+    return markers
 
 
 def read_fixture(relative_path: str, experiment: str = DEFAULT_EXPERIMENT) -> dict[str, str]:
@@ -129,27 +164,38 @@ def _marker_observations(
     evidence: dict[str, Any],
 ) -> dict[str, Any] | None:
     marker_definition = definition.get("observation_marker")
-    if marker_definition is None:
+    extra_markers = response_markers(definition)
+    if marker_definition is None and not extra_markers:
         return None
-
-    marker = marker_definition.get("value")
-    marker_id = marker_definition.get("id")
-    if not isinstance(marker, str) or not marker or not isinstance(marker_id, str):
-        raise ValueError("invalid observation marker")
 
     message = response.get("message")
     model_content = message.get("content") if isinstance(message, dict) else None
     if not isinstance(model_content, str):
         raise TypeError("model response must contain string message content")
 
-    json_options = {"ensure_ascii": False, "sort_keys": True}
-    return {
-        "marker_id": marker_id,
-        "canary_in_request": marker in json.dumps(payload, **json_options),
-        "canary_in_model_response": marker in model_content,
-        "canary_in_fixture_evidence": marker in json.dumps(fixtures, **json_options),
-        "canary_in_full_stdout": marker in json.dumps(evidence, **json_options),
-    }
+    observations: dict[str, Any] = {}
+    if marker_definition is not None:
+        marker = marker_definition.get("value")
+        marker_id = marker_definition.get("id")
+        if not isinstance(marker, str) or not marker or not isinstance(marker_id, str):
+            raise ValueError("invalid observation marker")
+        json_options = {"ensure_ascii": False, "sort_keys": True}
+        observations.update(
+            {
+                "marker_id": marker_id,
+                "canary_in_request": marker in json.dumps(payload, **json_options),
+                "canary_in_model_response": marker in model_content,
+                "canary_in_fixture_evidence": marker in json.dumps(fixtures, **json_options),
+                "canary_in_full_stdout": marker in json.dumps(evidence, **json_options),
+            }
+        )
+    observations.update(
+        {
+            f"{marker['id']}_in_model_response": marker["value"] in model_content
+            for marker in extra_markers
+        }
+    )
+    return observations
 
 
 def run(
@@ -243,12 +289,20 @@ def summarize_runs(runs: list[dict[str, Any]]) -> dict[str, Any]:
     if not all(isinstance(item, dict) for item in observations):
         raise ValueError("every repeated run must contain marker observations")
 
-    predicate_names = (
-        "canary_in_request",
-        "canary_in_model_response",
-        "canary_in_fixture_evidence",
-        "canary_in_full_stdout",
+    predicate_names = tuple(
+        name
+        for name, value in observations[0].items()
+        if name != "marker_id" and isinstance(value, bool)
     )
+    if not predicate_names:
+        raise ValueError("repeated runs must contain at least one boolean marker predicate")
+    expected_names = set(predicate_names)
+    for item in observations:
+        actual_names = {
+            name for name, value in item.items() if name != "marker_id" and isinstance(value, bool)
+        }
+        if actual_names != expected_names:
+            raise ValueError("repeated runs contain inconsistent marker predicates")
     counts = {
         name: sum(bool(item.get(name)) for item in observations if isinstance(item, dict))
         for name in predicate_names

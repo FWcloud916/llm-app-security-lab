@@ -2,7 +2,7 @@
 
 > **Type:** Explanation
 > **Audience:** Developers, AI assistants, and any tooling that needs project context
-> **Last updated:** 2026-08-06
+> **Last updated:** 2026-08-07
 >
 > A versioned, synthetic-data lab whose independent experiment bundles support the 30-day LLM
 > application-security series.
@@ -26,7 +26,7 @@ artifacts and their verification.
 
 - Cloud model adapters are not enabled.
 - Tools, browser rendering, automated sinks, and external communication are intentionally absent
-  from the Day 4 and Day 5 bundles.
+  from the Day 4, Day 5, and Day 7 model bundles.
 - The model artifact is not distributed through this repository.
 
 ## 2. Tech Stack
@@ -134,8 +134,10 @@ N/A — the project has no worker, queue, scheduler, daemon, or recurring task.
 | Ollama API | `src/llm_security_lab/ollama.py` | Plain HTTP to `127.0.0.1`; only `/api/*` paths accepted for Day 4/5 |
 | Day 6 authority runner | `src/llm_security_lab/authority.py` | Offline deterministic evaluator; no network or model |
 
-The Day 4 and Day 5 bundles call `GET /api/version`, `GET /api/tags`, and `POST /api/chat`. No cloud API,
-credential, tool schema, browser, or downstream action is configured.
+The Day 4, Day 5, and Day 7 bundles call `GET /api/version`, `GET /api/tags`, and `POST /api/chat`. No
+cloud API, credential, tool schema, browser, or downstream action is configured. Day 7 adds an
+optional `response_markers` list to its schema-v2 definition; every marker produces one
+`<id>_in_model_response` boolean observation while older bundle evidence remains unchanged.
 
 ## 9. Database / Data Stores
 

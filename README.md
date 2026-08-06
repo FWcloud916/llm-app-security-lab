@@ -51,6 +51,20 @@ Day 4 and Day 5 experiment commands send requests to the local Ollama server. Ra
 ignored; commit only reviewed, sanitized summaries. Review [SECURITY.md](SECURITY.md) before adding
 a bundle.
 
+The Day 7 boundary-crossing warmup separates task deviation from data movement with three fixed
+scenarios and an additional model-response marker:
+
+```bash
+uv run llm-security-lab \
+  --experiment day-07-boundary-crossing-warmup \
+  --scenario behavior-only \
+  --repeat 3 > evidence/raw/day-07/behavior-only.json
+uv run llm-security-report evidence/raw/day-07/behavior-only.json
+```
+
+Day 7 uses the same loopback-only model boundary as Day 4 and Day 5. It does not enable tools,
+rendering, automatic actions, or outbound communication.
+
 The Day 6 authority experiment runs all four synthetic cases without Ollama, network access,
 resource-content reads, or downstream actions:
 

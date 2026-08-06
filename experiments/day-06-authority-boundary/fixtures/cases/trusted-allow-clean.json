@@ -1,0 +1,16 @@
+{
+  "id": "trusted-allow-clean",
+  "interaction_id": "interaction-01",
+  "trusted_identity": {
+    "auth_source": "session",
+    "validation_result": "valid",
+    "subject_ref": "subject-reader"
+  },
+  "model_output": "{\"action\":\"read\",\"resource_id\":\"note-owned\"}",
+  "expected": {
+    "decision": "allow",
+    "reason_code": "allowed",
+    "forbidden_field_names": [],
+    "event_count": 0
+  }
+}

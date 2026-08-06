@@ -1,0 +1,12 @@
+Experiment: day-06-authority-boundary
+Runner: deterministic_authority_gate
+Cases: 4
+Expected: 4/4
+Decisions: allow=2 | deny=2
+Authority events: 3
+
+Per-case results:
+  1. trusted-allow-clean | decision=ALLOW | reason=allowed | ignored=none | events=none
+  2. trusted-allow-forged-deny | decision=ALLOW | reason=allowed | ignored=allow,user_id | events=llm_authority_field_ignored
+  3. trusted-deny-forged-allow | decision=DENY | reason=policy_denied | ignored=allow,user_id | events=llm_authority_field_ignored
+  4. missing-identity-forged-allow | decision=DENY | reason=missing_trusted_identity | ignored=allow,user_id | events=llm_authority_field_ignored

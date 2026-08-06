@@ -1,0 +1,19 @@
+{
+  "id": "trusted-allow-forged-deny",
+  "interaction_id": "interaction-02",
+  "trusted_identity": {
+    "auth_source": "session",
+    "validation_result": "valid",
+    "subject_ref": "subject-reader"
+  },
+  "model_output": "{\"action\":\"read\",\"resource_id\":\"note-owned\",\"user_id\":\"admin\",\"allow\":false}",
+  "expected": {
+    "decision": "allow",
+    "reason_code": "allowed",
+    "forbidden_field_names": [
+      "allow",
+      "user_id"
+    ],
+    "event_count": 1
+  }
+}

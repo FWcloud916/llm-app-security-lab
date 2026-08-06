@@ -110,13 +110,18 @@ The public runner and reporter interfaces are:
 llm-security-lab --scenario {clean,attack}
 llm-security-lab --experiment <experiment-id> --scenario <name> [--repeat N]
 llm-security-report <raw-json>
+llm-security-authority --experiment day-06-authority-boundary
+llm-security-authority-report <raw-json>
 ```
 
 The legacy command defaults to `day-04-vulnerable-baseline`. An explicit experiment selects one
 bundle and writes complete JSON evidence to stdout; repetitions produce one batch containing every
 full run plus aggregate predicates. The reporter verifies that the batch is complete and internally
 consistent before printing a sanitized summary. Invalid bundles, scenarios, fixtures, model digest
-mismatches, mixed batches, and Ollama failures return exit status 1.
+mismatches, mixed batches, and Ollama failures return exit status 1. The authority runner executes
+the complete fixed case matrix once, evaluates proposals against synthetic trusted application state
+and policy, and its reporter verifies expected decisions and event counts without printing raw model
+output or identity fixtures.
 
 ## 7. Background Jobs & Scheduled Tasks
 
@@ -126,7 +131,8 @@ N/A — the project has no worker, queue, scheduler, daemon, or recurring task.
 
 | Integration | Client | Boundary |
 |---|---|---|
-| Ollama API | `src/llm_security_lab/ollama.py` | Plain HTTP to `127.0.0.1`; only `/api/*` paths accepted |
+| Ollama API | `src/llm_security_lab/ollama.py` | Plain HTTP to `127.0.0.1`; only `/api/*` paths accepted for Day 4/5 |
+| Day 6 authority runner | `src/llm_security_lab/authority.py` | Offline deterministic evaluator; no network or model |
 
 The Day 4 and Day 5 bundles call `GET /api/version`, `GET /api/tags`, and `POST /api/chat`. No cloud API,
 credential, tool schema, browser, or downstream action is configured.

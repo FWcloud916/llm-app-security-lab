@@ -1,0 +1,10 @@
+{
+  "version": "policy-v1",
+  "allow": [
+    {
+      "subject_ref": "subject-reader",
+      "action": "read",
+      "resource_id": "note-owned"
+    }
+  ]
+}

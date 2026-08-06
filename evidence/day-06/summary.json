@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "experiment_id": "day-06-authority-boundary",
+  "recorded_at": "2026-08-06T12:27:05.502363+00:00",
+  "runner": "deterministic_authority_gate",
+  "environment": {
+    "model_call": false,
+    "network": false,
+    "resource_content_read": false,
+    "downstream_action": false
+  },
+  "results": {
+    "trusted-allow-clean": {
+      "decision": "allow",
+      "reason_code": "allowed",
+      "ignored_fields": [],
+      "authority_events": 0
+    },
+    "trusted-allow-forged-deny": {
+      "decision": "allow",
+      "reason_code": "allowed",
+      "ignored_fields": [
+        "allow",
+        "user_id"
+      ],
+      "authority_events": 1
+    },
+    "trusted-deny-forged-allow": {
+      "decision": "deny",
+      "reason_code": "policy_denied",
+      "ignored_fields": [
+        "allow",
+        "user_id"
+      ],
+      "authority_events": 1
+    },
+    "missing-identity-forged-allow": {
+      "decision": "deny",
+      "reason_code": "missing_trusted_identity",
+      "ignored_fields": [
+        "allow",
+        "user_id"
+      ],
+      "authority_events": 1
+    }
+  },
+  "raw_evidence_sha256": "2277791d36a144ed3d9af21dbbde3023eeaa36f3619aa4228fd21b9abbdada94"
+}

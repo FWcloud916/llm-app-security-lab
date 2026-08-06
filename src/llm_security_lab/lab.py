@@ -29,13 +29,20 @@ def available_experiments() -> list[str]:
     """Return experiment bundle IDs that contain an experiment definition."""
     if not EXPERIMENTS_ROOT.is_dir():
         return []
-    return sorted(
-        path.name
-        for path in EXPERIMENTS_ROOT.iterdir()
-        if path.is_dir()
-        and EXPERIMENT_ID_PATTERN.fullmatch(path.name)
-        and (path / "experiment.json").is_file()
-    )
+    names: list[str] = []
+    for path in EXPERIMENTS_ROOT.iterdir():
+        if not path.is_dir() or not EXPERIMENT_ID_PATTERN.fullmatch(path.name):
+            continue
+        definition_path = path / "experiment.json"
+        if not definition_path.is_file():
+            continue
+        try:
+            definition = json.loads(definition_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if definition.get("schema_version") == 2 and "model" in definition:
+            names.append(path.name)
+    return sorted(names)
 
 
 def experiment_root(experiment: str) -> Path:

@@ -8,6 +8,7 @@ A versioned, synthetic-data lab for reproducing the LLM application-security exp
 - Runs independent, versioned experiment bundles against a loopback Ollama endpoint.
 - Fails closed when the configured model tag no longer matches the recorded full digest.
 - Prints the full fixtures, request, model metadata, response, token counts, and timings as JSON.
+- Runs the Day 6 deterministic authority-boundary bundle without a model or network call.
 - Preserves stable milestone tags so an article can point to the exact code it described.
 
 ## Quickstart
@@ -46,8 +47,19 @@ uv run llm-security-lab \
 uv run llm-security-report evidence/raw/day-05/clean.json
 ```
 
-Every experiment command sends requests to the local Ollama server. Raw evidence stays ignored;
-commit only reviewed, sanitized summaries. Review [SECURITY.md](SECURITY.md) before adding a bundle.
+Day 4 and Day 5 experiment commands send requests to the local Ollama server. Raw evidence stays
+ignored; commit only reviewed, sanitized summaries. Review [SECURITY.md](SECURITY.md) before adding
+a bundle.
+
+The Day 6 authority experiment runs all four synthetic cases without Ollama, network access,
+resource-content reads, or downstream actions:
+
+```bash
+uv run llm-security-authority \
+  --experiment day-06-authority-boundary \
+  > evidence/raw/day-06/results.json
+uv run llm-security-authority-report evidence/raw/day-06/results.json
+```
 
 ### Test
 
@@ -62,7 +74,7 @@ The test suite does not call a model or the network.
 ## Project structure
 
 ```text
-src/          Generic runner, reporter, Ollama client, and CLI
+src/          Generic runner, deterministic authority runner, reporters, Ollama client, and CLIs
 experiments/  Independent definitions and synthetic fixture bundles
 evidence/     Sanitized experiment checkpoints; raw runs stay ignored
 tests/        Offline unit tests

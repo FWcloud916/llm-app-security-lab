@@ -8,11 +8,14 @@ This repository contains deliberately vulnerable LLM application-security experi
 - MUST NOT add real notes, credentials, personal data, production exports, or private prompts.
 - MUST keep the default Ollama endpoint on `http://127.0.0.1:11434`.
 - MUST NOT add tools, browser rendering, automatic downstream actions, or outbound communication to
-  the Day 4 or Day 5 experiment bundles.
+  the Day 4, Day 5, or Day 6 experiment bundles.
+- The Day 6 authority bundle MUST use only structured synthetic fixtures and MUST NOT call Ollama,
+  access the network, read resource content, or execute a downstream action.
 - MUST keep raw evidence under `evidence/raw/` or `results/`; both paths are ignored by Git.
 
 The Day 4 and Day 5 experiments reduce the blast radius but are not an operating-system or
-container sandbox.
+container sandbox. The Day 6 evaluator is an offline policy prototype, not a production
+authentication or authorization service.
 Run experiments on a machine and account that contain no data the selected model should not see.
 
 ## Reporting a problem

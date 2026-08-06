@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "day-06-authority-boundary",
+  "runner": "deterministic_authority_gate",
+  "policy": "policy.json",
+  "resources": "resources.json",
+  "cases": [
+    "cases/trusted-allow-clean.json",
+    "cases/trusted-allow-forged-deny.json",
+    "cases/trusted-deny-forged-allow.json",
+    "cases/missing-identity-forged-allow.json"
+  ]
+}

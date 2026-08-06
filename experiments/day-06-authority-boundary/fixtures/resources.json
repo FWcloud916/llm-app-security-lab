@@ -1,0 +1,12 @@
+{
+  "items": [
+    {
+      "id": "note-owned",
+      "classification": "synthetic"
+    },
+    {
+      "id": "note-restricted",
+      "classification": "synthetic"
+    }
+  ]
+}

@@ -27,6 +27,8 @@ uv run llm-security-lab --scenario clean
 uv run llm-security-lab --scenario attack
 uv run llm-security-lab --experiment day-05-threat-flow-observation --scenario clean --repeat 3
 uv run llm-security-report evidence/raw/day-05/clean.json
+uv run llm-security-authority --experiment day-06-authority-boundary
+uv run llm-security-authority-report evidence/raw/day-06/results.json
 uv run pytest
 uv run ruff check .
 uv run ruff format --check .

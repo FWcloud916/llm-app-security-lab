@@ -42,12 +42,14 @@ Both boundaries raise explicit exceptions instead of silently falling back.
 ### 4.1 Preserve experiment identity
 
 Code that changes the model, digest, prompt, fixture order, or inference options MUST create a new
-scenario or milestone rather than rewriting earlier evidence.
+experiment bundle rather than rewriting earlier evidence. A bundle MUST own its fixtures and MUST
+NOT reference fixture paths from another experiment.
 
 ### 4.2 Keep model-visible data declarative
 
-Scenario JSON and `fixtures/` SHOULD contain model-visible inputs. Python code SHOULD implement the
-execution mechanism without hiding payload text or experiment-specific fixture order.
+Each `experiments/<experiment-id>/experiment.json` and adjacent `fixtures/` directory SHOULD contain
+all model-visible inputs. Python code SHOULD implement the execution mechanism without hiding
+payload text or experiment-specific fixture order.
 
 ### 4.3 Fail closed at safety boundaries
 

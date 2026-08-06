@@ -4,7 +4,8 @@
 > **Audience:** Developers, AI assistants, and any tooling that needs project context
 > **Last updated:** 2026-08-06
 >
-> A versioned, synthetic-data lab for the experiments in the 30-day LLM application-security series.
+> A versioned, synthetic-data lab whose independent experiment bundles support the 30-day LLM
+> application-security series.
 
 ---
 
@@ -12,8 +13,8 @@
 
 ### 1.1 Core Responsibilities
 
-The repository owns runnable experiment code, synthetic fixtures, versioned scenarios, offline
-tests, and sanitized result checkpoints. Each article can cite one immutable Git commit or tag.
+The repository owns a generic runner, independent experiment bundles, offline tests, and sanitized
+result checkpoints. Each article can cite one immutable Git commit or tag.
 
 ### 1.2 Relationship with Other Systems
 
@@ -25,7 +26,7 @@ artifacts and their verification.
 
 - Cloud model adapters are not enabled.
 - Tools, browser rendering, automated sinks, and external communication are intentionally absent
-  from the Day 4 baseline.
+  from the Day 4 and Day 5 bundles.
 - The model artifact is not distributed through this repository.
 
 ## 2. Tech Stack
@@ -49,7 +50,7 @@ adding a renderer or another output sink.
 CLI argument
     │
     ▼
-versioned scenario.json
+versioned experiment bundle
     │
     ├─► synthetic fixture loader ──► path and symlink checks ──► SHA-256 evidence
     │
@@ -64,8 +65,9 @@ versioned scenario.json
 
 ### Key Principles
 
-- Scenario files own model, prompt, option, and fixture-order decisions.
-- Fixture loading MUST fail closed on symlinks and paths outside `fixtures/`.
+- Experiment bundles own model, prompt, option, fixture, and fixture-order decisions.
+- Bundles MUST NOT read fixtures from another experiment.
+- Fixture loading MUST fail closed on symlinks and paths outside the selected bundle.
 - The Ollama client MUST reject non-loopback origins.
 - A model tag is not identity; the full digest is checked before inference.
 - Model responses remain untrusted evidence and do not trigger automatic actions.
@@ -75,11 +77,12 @@ versioned scenario.json
 ```text
 .
 ├── src/llm_security_lab/
-│   ├── cli.py                 # CLI parsing and JSON output
-│   ├── lab.py                 # Scenario, fixture, digest, request, and evidence flow
+│   ├── cli.py                 # Experiment selection, repetition, and raw JSON output
+│   ├── lab.py                 # Bundle, fixture, digest, request, and evidence flow
+│   ├── report.py              # Sanitized repeated-run summary
 │   └── ollama.py              # Loopback-only JSON client
-├── fixtures/                  # Synthetic model-visible data
-├── scenarios/                 # Immutable experiment definitions by milestone
+├── experiments/
+│   └── <experiment-id>/       # Definition plus experiment-owned synthetic fixtures
 ├── evidence/                  # Reviewed, sanitized checkpoints
 ├── tests/                     # Offline unit tests with fake clients
 ├── docs/                      # Architecture and coding references
@@ -91,7 +94,7 @@ versioned scenario.json
 
 ### Core Entity Relationships
 
-N/A — the project has no database entities. A scenario definition selects a model configuration,
+N/A — the project has no database entities. An experiment definition selects a model configuration,
 one target fixture, and an ordered list of note fixtures; one run produces an evidence document.
 
 ### Model Details
@@ -101,15 +104,19 @@ and are not persistent domain models.
 
 ## 6. API / Interface Structure
 
-The public interface is one CLI command:
+The public runner and reporter interfaces are:
 
 ```text
 llm-security-lab --scenario {clean,attack}
+llm-security-lab --experiment <experiment-id> --scenario <name> [--repeat N]
+llm-security-report <raw-json>
 ```
 
-The command loads `scenarios/day-04-vulnerable-baseline/scenario.json`, runs the selected fixture
-set, and writes complete JSON evidence to stdout. Invalid scenarios, missing fixtures, model digest
-mismatches, and Ollama failures return exit status 1.
+The legacy command defaults to `day-04-vulnerable-baseline`. An explicit experiment selects one
+bundle and writes complete JSON evidence to stdout; repetitions produce one batch containing every
+full run plus aggregate predicates. The reporter verifies that the batch is complete and internally
+consistent before printing a sanitized summary. Invalid bundles, scenarios, fixtures, model digest
+mismatches, mixed batches, and Ollama failures return exit status 1.
 
 ## 7. Background Jobs & Scheduled Tasks
 
@@ -121,7 +128,7 @@ N/A — the project has no worker, queue, scheduler, daemon, or recurring task.
 |---|---|---|
 | Ollama API | `src/llm_security_lab/ollama.py` | Plain HTTP to `127.0.0.1`; only `/api/*` paths accepted |
 
-The Day 4 baseline calls `GET /api/version`, `GET /api/tags`, and `POST /api/chat`. No cloud API,
+The Day 4 and Day 5 bundles call `GET /api/version`, `GET /api/tags`, and `POST /api/chat`. No cloud API,
 credential, tool schema, browser, or downstream action is configured.
 
 ## 9. Database / Data Stores
@@ -142,7 +149,7 @@ N/A — the project is a local CLI lab and has no deployed service or automated 
 
 ### Configuration Hierarchy
 
-1. The versioned scenario JSON selects the model, digest, options, prompt, target, and note order.
+1. The selected experiment bundle defines the model, digest, options, prompt, target, and note order.
 2. The CLI selects one named scenario only.
 3. `OllamaClient` fixes the default origin and rejects non-loopback alternatives.
 

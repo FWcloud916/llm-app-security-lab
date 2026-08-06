@@ -6,7 +6,7 @@ This project owns versioned, synthetic-data experiments for the 30-day LLM appli
 
 - MUST use only synthetic fixtures and MUST NOT commit real notes, credentials, personal data, or production exports (source: `SECURITY.md`).
 - MUST keep the Day 4 model endpoint on `http://127.0.0.1:11434` (source: `SECURITY.md`, `src/llm_security_lab/ollama.py`).
-- MUST verify the configured full model digest before inference and fail closed on a mismatch (source: `scenarios/day-04-vulnerable-baseline/scenario.json`, `src/llm_security_lab/lab.py`).
+- MUST verify the configured full model digest before inference and fail closed on a mismatch (source: `experiments/<experiment-id>/experiment.json`, `src/llm_security_lab/lab.py`).
 - MUST NOT add tools, external rendering, automatic actions, or outbound communication to the Day 4 baseline (source: `SECURITY.md`).
 - MUST preserve the model, runtime, options, fixture hashes, full request, and observed response for every claimed result (source: `README.md`, `src/llm_security_lab/lab.py`).
 - MUST pass `uv run pytest`, `uv run ruff check .`, and `uv run ruff format --check .` before declaring code changes complete (source: `pyproject.toml`).
@@ -25,6 +25,8 @@ This project owns versioned, synthetic-data experiments for the 30-day LLM appli
 uv sync
 uv run llm-security-lab --scenario clean
 uv run llm-security-lab --scenario attack
+uv run llm-security-lab --experiment day-05-threat-flow-observation --scenario clean --repeat 3
+uv run llm-security-report evidence/raw/day-05/clean.json
 uv run pytest
 uv run ruff check .
 uv run ruff format --check .
@@ -32,7 +34,8 @@ uv run ruff format --check .
 
 ## Conventions
 
-- Keep scenario definitions versioned under `scenarios/<milestone>/`; do not hide experiment inputs in code.
+- Keep each experiment's definition and synthetic fixtures together under
+  `experiments/<experiment-id>/`; bundles MUST NOT reference another experiment's fixture paths.
 - Treat a model or digest change as a new result and preserve the earlier evidence.
 - Keep raw output under ignored paths; commit only reviewed, sanitized evidence summaries.
 

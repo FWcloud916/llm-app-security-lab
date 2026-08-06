@@ -13,6 +13,7 @@ dependencies = []
 
 [project.scripts]
 llm-security-lab = "llm_security_lab.cli:main"
+llm-security-report = "llm_security_lab.report:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/llm_security_lab"]

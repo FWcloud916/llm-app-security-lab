@@ -5,7 +5,7 @@ A versioned, synthetic-data lab for reproducing the LLM application-security exp
 
 ## What it does
 
-- Runs clean and indirect Prompt Injection scenarios against a loopback Ollama endpoint.
+- Runs independent, versioned experiment bundles against a loopback Ollama endpoint.
 - Fails closed when the configured model tag no longer matches the recorded full digest.
 - Prints the full fixtures, request, model metadata, response, token counts, and timings as JSON.
 - Preserves stable milestone tags so an article can point to the exact code it described.
@@ -35,8 +35,19 @@ uv run llm-security-lab --scenario clean
 uv run llm-security-lab --scenario attack
 ```
 
-Both commands send the request to the local Ollama server. Review [SECURITY.md](SECURITY.md) before
-adding a scenario or fixture.
+Those backward-compatible commands run the Day 4 baseline. The independent Day 5 threat-flow
+experiment records three complete runs per scenario:
+
+```bash
+uv run llm-security-lab \
+  --experiment day-05-threat-flow-observation \
+  --scenario clean \
+  --repeat 3 > evidence/raw/day-05/clean.json
+uv run llm-security-report evidence/raw/day-05/clean.json
+```
+
+Every experiment command sends requests to the local Ollama server. Raw evidence stays ignored;
+commit only reviewed, sanitized summaries. Review [SECURITY.md](SECURITY.md) before adding a bundle.
 
 ### Test
 
@@ -51,9 +62,8 @@ The test suite does not call a model or the network.
 ## Project structure
 
 ```text
-src/          Python package and CLI
-fixtures/     Synthetic notes and target documents only
-scenarios/    Versioned model, prompt, and fixture selections
+src/          Generic runner, reporter, Ollama client, and CLI
+experiments/  Independent definitions and synthetic fixture bundles
 evidence/     Sanitized experiment checkpoints; raw runs stay ignored
 tests/        Offline unit tests
 docs/         Architecture and coding references

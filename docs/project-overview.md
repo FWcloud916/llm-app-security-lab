@@ -2,7 +2,7 @@
 
 > **Type:** Explanation
 > **Audience:** Developers, AI assistants, and any tooling that needs project context
-> **Last updated:** 2026-08-07
+> **Last updated:** 2026-08-08
 >
 > A versioned, synthetic-data lab whose independent experiment bundles support the 30-day LLM
 > application-security series.
@@ -25,8 +25,8 @@ artifacts and their verification.
 ### 1.3 Deprecated / Retired or Not-Yet-Enabled Features
 
 - Cloud model adapters are not enabled.
-- Tools, browser rendering, automated sinks, and external communication are intentionally absent
-  from the Day 4, Day 5, Day 7, Day 8, and Day 9 model bundles.
+- Tools, browser rendering, OCR, automated sinks, and external communication are intentionally absent
+  from the Day 4, Day 5, Day 7, Day 8, Day 9, and Day 10 model bundles.
 - The model artifact is not distributed through this repository.
 
 ## 2. Tech Stack
@@ -35,7 +35,7 @@ artifacts and their verification.
 |---|---|---|
 | Language | Python 3.11+ | Standard-library HTTP and filesystem APIs are sufficient for the baseline. |
 | Environment | uv with `uv.lock` | Locks development dependencies and provides one command surface. |
-| Runtime dependencies | Python standard library | Keeps the experiment wrapper independent of an Ollama SDK. |
+| Runtime dependencies | Python standard library + pypdf 6.x | Keeps HTTP and HTML/email parsing in the standard library; pins one PDF text/metadata extractor. |
 | Test | pytest | Supports offline fake clients, temporary paths, and explicit failure assertions. |
 | Lint and format | Ruff | Provides one configured check and format gate. |
 | Model runtime | Ollama on `127.0.0.1` | Preserves the local-only Day 4 safety boundary. |
@@ -52,7 +52,8 @@ CLI argument
     ▼
 versioned experiment bundle
     │
-    ├─► synthetic fixture loader ──► path and symlink checks ──► SHA-256 evidence
+    ├─► synthetic fixture loader ──► path and symlink checks ──► optional document extractor
+    │                                                       └─► raw/extracted SHA-256 evidence
     │
     └─► Ollama preflight ──► version + full model digest check
                                   │
@@ -138,12 +139,16 @@ N/A — the project has no worker, queue, scheduler, daemon, or recurring task.
 | Ollama API | `src/llm_security_lab/ollama.py` | Plain HTTP to `127.0.0.1`; only `/api/*` paths accepted for Day 4/5 |
 | Day 6 authority runner | `src/llm_security_lab/authority.py` | Offline deterministic evaluator; no network or model |
 
-The Day 4, Day 5, Day 7, Day 8, and Day 9 bundles call `GET /api/version`, `GET /api/tags`, and
+The Day 4, Day 5, Day 7, Day 8, Day 9, and Day 10 bundles call `GET /api/version`, `GET /api/tags`, and
 `POST /api/chat`. No cloud API, credential, tool schema, browser, or downstream action is configured.
 Day 7 adds an optional `response_markers` list to its schema-v2 definition; every marker produces one
 `<id>_in_model_response` boolean observation while older bundle evidence remains unchanged. Day 8
 uses schema v3 to predeclare a complete multi-scenario option sequence without CLI overrides. Day 9
 adds an optional scenario-level user request while retaining the same fixed-plan and evidence rules.
+Day 10 adds scenario-level synthetic HTML, PDF, and email extraction. Raw source bytes, source hash,
+extractor identity and policy, extracted text hash, serialized request, and model response remain
+separate evidence. PDF metadata and email attachment filenames enter context only when the scenario
+explicitly enables those application fields.
 
 ## 9. Database / Data Stores
 

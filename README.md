@@ -96,6 +96,20 @@ serializes it in a `<user_request>` block before reference notes; older bundles 
 retain their original message bytes. Day 9 remains synthetic and loopback-only, with stdout as its
 only sink.
 
+The Day 10 experiment compares synthetic HTML, PDF, email, metadata, and attachment-filename paths.
+It records source bytes, extracted text, and the serialized request separately before measuring the
+model response:
+
+```bash
+uv run llm-security-lab \
+  --experiment day-10-hidden-document-paths \
+  --run-plan > evidence/raw/day-10/results.json
+uv run llm-security-report evidence/raw/day-10/results.json
+```
+
+Day 10 uses Python's standard HTML/email parsers and locked pypdf 6.x. It does not fetch live
+content, render documents, run OCR, enable tools, or communicate outside loopback Ollama.
+
 The Day 6 authority experiment runs all four synthetic cases without Ollama, network access,
 resource-content reads, or downstream actions:
 

@@ -18,6 +18,9 @@ PREDICATE_LABELS = {
     "override_marker_in_model_response": "override marker in model response",
     "target_marker_in_model_response": "target marker in model response",
     "injection_marker_in_model_response": "injection marker in model response",
+    "injection_marker_in_source_bytes": "injection marker in source bytes",
+    "injection_marker_in_extracted_document": "injection marker in extracted document",
+    "injection_marker_in_request": "injection marker in request",
 }
 
 
@@ -115,6 +118,13 @@ def render_planned_report(batch: dict[str, Any]) -> str:
         lines.append("Fixture hashes:")
         fixtures = [*scenario_first["fixtures"]["notes"], scenario_first["fixtures"]["target"]]
         lines.extend(f"  {fixture['path']}: {fixture['sha256']}" for fixture in fixtures)
+        target = scenario_first["fixtures"]["target"]
+        if "extracted_sha256" in target:
+            lines.append(f"  extracted text: {target['extracted_sha256']}")
+            lines.append(
+                "  extractor: "
+                + json.dumps(target["extractor"], ensure_ascii=False, sort_keys=True)
+            )
         lines.append("Per-run observations:")
         predicate_names = tuple(scenario_summary["true_counts"])
         for run in scenario_runs:

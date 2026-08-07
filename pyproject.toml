@@ -9,7 +9,9 @@ description = "Reproducible synthetic-data experiments for LLM application secur
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "pypdf>=6,<7",
+]
 
 [project.scripts]
 llm-security-lab = "llm_security_lab.cli:main"

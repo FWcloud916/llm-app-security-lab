@@ -5,11 +5,14 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from base64 import b64decode, b64encode
+from binascii import Error as Base64Error
 from copy import deepcopy
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Protocol
 
+from llm_security_lab.documents import extract_document, validate_document_spec
 from llm_security_lab.ollama import OllamaClient
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -75,7 +78,13 @@ def load_definition(experiment: str = DEFAULT_EXPERIMENT) -> dict[str, Any]:
         raise ValueError("unsupported experiment schema version")
     if definition.get("id") != experiment:
         raise ValueError("experiment id does not match its bundle directory")
-    response_markers(definition)
+    markers = response_markers(definition)
+    document_marker_id = definition.get("document_observation_marker")
+    if document_marker_id is not None and (
+        not isinstance(document_marker_id, str)
+        or not any(marker["id"] == document_marker_id for marker in markers)
+    ):
+        raise ValueError("document observation marker must reference a response marker id")
     if definition["schema_version"] == 3:
         planned_runs(definition)
     return definition
@@ -114,6 +123,9 @@ def planned_runs(definition: dict[str, Any]) -> list[dict[str, Any]]:
         notes = scenario.get("notes")
         if not isinstance(notes, list) or not notes or not all(isinstance(x, str) for x in notes):
             raise ValueError(f"planned scenario {scenario_name} needs fixture note paths")
+        document = scenario.get("document")
+        if document is not None:
+            validate_document_spec(document)
         runs = scenario.get("runs")
         if not isinstance(runs, list) or not runs or len(runs) > 20:
             raise ValueError(f"planned scenario {scenario_name} needs between 1 and 20 runs")
@@ -200,6 +212,38 @@ def read_fixture(relative_path: str, experiment: str = DEFAULT_EXPERIMENT) -> di
     }
 
 
+def read_document_fixture(raw_spec: object, experiment: str = DEFAULT_EXPERIMENT) -> dict[str, Any]:
+    """Read and extract one binary-safe document fixture within its experiment bundle."""
+    spec = validate_document_spec(raw_spec)
+    relative_path = spec["path"]
+    fixtures_root = experiment_root(experiment) / "fixtures"
+    path = fixtures_root / relative_path
+    try:
+        relative = path.relative_to(fixtures_root)
+    except ValueError as error:
+        raise ValueError(f"document escaped experiment bundle: {relative_path}") from error
+    current = fixtures_root
+    for part in relative.parts:
+        current /= part
+        if current.is_symlink():
+            raise ValueError(f"refusing symlink document: {relative_path}")
+
+    resolved = path.resolve(strict=True)
+    if not resolved.is_relative_to(fixtures_root) or not resolved.is_file():
+        raise ValueError(f"document escaped experiment bundle: {relative_path}")
+
+    raw = resolved.read_bytes()
+    content, extractor = extract_document(raw, spec)
+    return {
+        "path": relative_path,
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "source_base64": b64encode(raw).decode("ascii"),
+        "content": content,
+        "extracted_sha256": hashlib.sha256(content.encode()).hexdigest(),
+        "extractor": extractor,
+    }
+
+
 def select_model(tags: dict[str, Any], expected: dict[str, Any]) -> dict[str, Any]:
     """Fail closed when the model tag is missing or its full digest changed."""
     model = next(
@@ -213,6 +257,39 @@ def select_model(tags: dict[str, Any], expected: dict[str, Any]) -> dict[str, An
             f"model digest changed: expected {expected['digest']}, got {model.get('digest')}"
         )
     return model
+
+
+def _fixture_fingerprint(fixture: dict[str, Any]) -> dict[str, Any]:
+    """Validate binary document evidence and return its stable input fingerprint."""
+    fingerprint = {"path": fixture.get("path"), "sha256": fixture.get("sha256")}
+    source_base64 = fixture.get("source_base64")
+    if source_base64 is None:
+        return fingerprint
+    content = fixture.get("content")
+    extracted_sha256 = fixture.get("extracted_sha256")
+    extractor = fixture.get("extractor")
+    if (
+        not isinstance(source_base64, str)
+        or not isinstance(content, str)
+        or not isinstance(extracted_sha256, str)
+        or not isinstance(extractor, dict)
+    ):
+        raise ValueError("document fixture evidence is incomplete")
+    try:
+        raw = b64decode(source_base64, validate=True)
+    except (Base64Error, ValueError) as error:
+        raise ValueError("document source base64 is invalid") from error
+    if hashlib.sha256(raw).hexdigest() != fixture.get("sha256"):
+        raise ValueError("document source hash does not match its bytes")
+    if hashlib.sha256(content.encode()).hexdigest() != extracted_sha256:
+        raise ValueError("document extracted hash does not match its text")
+    fingerprint.update(
+        {
+            "extracted_sha256": extracted_sha256,
+            "extractor": extractor,
+        }
+    )
+    return fingerprint
 
 
 def build_user_message(
@@ -272,6 +349,29 @@ def _marker_observations(
             for marker in extra_markers
         }
     )
+    document_marker_id = definition.get("document_observation_marker")
+    if document_marker_id is not None:
+        marker = next(
+            (item for item in extra_markers if item["id"] == document_marker_id),
+            None,
+        )
+        if marker is None:
+            raise ValueError("document observation marker must reference a response marker id")
+        target = fixtures.get("target", {})
+        source_base64 = target.get("source_base64")
+        extracted_content = target.get("content")
+        if not isinstance(source_base64, str) or not isinstance(extracted_content, str):
+            raise ValueError("document observations require a document target fixture")
+        marker_id = marker["id"]
+        marker_value = marker["value"]
+        observations.update(
+            {
+                f"{marker_id}_in_source_bytes": marker_value.encode() in b64decode(source_base64),
+                f"{marker_id}_in_extracted_document": marker_value in extracted_content,
+                f"{marker_id}_in_request": marker_value
+                in json.dumps(payload, ensure_ascii=False, sort_keys=True),
+            }
+        )
     return observations
 
 
@@ -290,7 +390,12 @@ def _run_scenario(
 ) -> dict[str, Any]:
     """Execute one already validated scenario with preflighted model metadata."""
     notes = [read_fixture(path, experiment) for path in scenario_definition["notes"]]
-    target = read_fixture(definition["target"], experiment)
+    document = scenario_definition.get("document")
+    target = (
+        read_document_fixture(document, experiment)
+        if document is not None
+        else read_fixture(definition["target"], experiment)
+    )
     messages = [
         {"role": "system", "content": system_message},
         {
@@ -376,7 +481,7 @@ def summarize_runs(runs: list[dict[str, Any]]) -> dict[str, Any]:
                 "model": run.get("model"),
                 "options": run.get("request", {}).get("options"),
                 "fixtures": [
-                    {"path": fixture.get("path"), "sha256": fixture.get("sha256")}
+                    _fixture_fingerprint(fixture)
                     for fixture in [
                         *run.get("fixtures", {}).get("notes", []),
                         run.get("fixtures", {}).get("target", {}),
@@ -506,7 +611,7 @@ def summarize_planned_runs(
                 {
                     "messages": item.get("request", {}).get("messages"),
                     "fixtures": [
-                        {"path": fixture.get("path"), "sha256": fixture.get("sha256")}
+                        _fixture_fingerprint(fixture)
                         for fixture in [
                             *item.get("fixtures", {}).get("notes", []),
                             item.get("fixtures", {}).get("target", {}),

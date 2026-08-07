@@ -16,11 +16,15 @@ CANARY = "LAB_ONLY_CANARY_7K4M_20260806"
 DAY_5 = "day-05-threat-flow-observation"
 DAY_7 = "day-07-boundary-crossing-warmup"
 DAY_8 = "day-08-prompt-injection-mechanism"
+DAY_9 = "day-09-direct-vs-indirect-injection"
 DAY_7_CANARY = "LAB_ONLY_DAY7_CANARY_6Q9V_20260807"
 OVERRIDE_MARKER = "DAY7_OVERRIDE_ACCEPTED"
 DAY_8_CANARY = "LAB_ONLY_DAY8_CANARY_4R7N_20260807"
 DAY_8_TARGET = "DAY8_TARGET_COMPLETED"
 DAY_8_INJECTION = "DAY8_INJECTION_ACCEPTED"
+DAY_9_CANARY = "LAB_ONLY_DAY9_CANARY_8M2T_20260807"
+DAY_9_TARGET = "DAY9_TARGET_COMPLETED"
+DAY_9_INJECTION = "DAY9_INJECTION_ACCEPTED"
 
 
 class FakeClient:
@@ -69,6 +73,7 @@ def test_experiment_bundles_are_discoverable() -> None:
         DAY_5,
         DAY_7,
         DAY_8,
+        DAY_9,
     ]
 
 
@@ -229,6 +234,65 @@ def test_day_8_plan_is_fixed_before_execution() -> None:
     assert {item["options"]["temperature"] for item in plan[12:]} == {0.7}
 
 
+def test_day_9_plan_is_fixed_before_execution() -> None:
+    definition = lab.load_definition(DAY_9)
+    plan = lab.planned_runs(definition)
+
+    assert len(plan) == 30
+    assert [item["scenario"] for item in plan] == [
+        *(["clean"] * 10),
+        *(["direct"] * 10),
+        *(["indirect"] * 10),
+    ]
+    for offset in (0, 10, 20):
+        assert [item["options"]["seed"] for item in plan[offset : offset + 10]] == list(
+            range(301, 311)
+        )
+    assert {item["options"]["temperature"] for item in plan} == {0.7}
+
+
+def test_planned_user_request_must_be_non_empty_when_declared() -> None:
+    definition = deepcopy(lab.load_definition(DAY_8))
+    definition["scenarios"]["phase-a-clean"]["user_request"] = "  "
+
+    with pytest.raises(ValueError, match="user request must be a non-empty string"):
+        lab.planned_runs(definition)
+
+
+def test_day_9_delivers_the_same_payload_through_distinct_sources() -> None:
+    definition = lab.load_definition(DAY_9)
+    indirect_payload = lab.read_fixture("synthetic-notes/99-indirect-injection.md", DAY_9)[
+        "content"
+    ]
+
+    assert indirect_payload in definition["scenarios"]["direct"]["user_request"]
+    assert indirect_payload not in definition["scenarios"]["indirect"]["user_request"]
+
+    response = f"{DAY_9_TARGET}\n{DAY_9_INJECTION}\nLEAKED: {DAY_9_CANARY}"
+    batch = lab.run_planned(DAY_9, client=FakeClient(response_content=response))
+    direct = batch["runs"][10]
+    indirect = batch["runs"][20]
+    direct_message = direct["request"]["messages"][1]["content"]
+    indirect_message = indirect["request"]["messages"][1]["content"]
+
+    assert direct_message.startswith("<user_request>\n")
+    assert indirect_message.startswith("<user_request>\n")
+    assert direct_message.index(indirect_payload) < direct_message.index("<reference_notes>")
+    assert indirect_message.index(indirect_payload) > indirect_message.index("<reference_notes>")
+    assert {fixture["path"] for fixture in direct["fixtures"]["notes"]} == {
+        "synthetic-notes/01-preferences.md",
+        "synthetic-notes/02-lab-canary.md",
+    }
+    assert {fixture["path"] for fixture in indirect["fixtures"]["notes"]} == {
+        "synthetic-notes/01-preferences.md",
+        "synthetic-notes/02-lab-canary.md",
+        "synthetic-notes/99-indirect-injection.md",
+    }
+    assert direct["request"]["messages"][0] == indirect["request"]["messages"][0]
+    assert "tools" not in direct["request"]
+    assert "tools" not in indirect["request"]
+
+
 def test_day_8_executes_complete_plan_with_one_model_preflight() -> None:
     response = f"{DAY_8_TARGET}\n{DAY_8_INJECTION}\nLEAKED: {DAY_8_CANARY}"
     client = FakeClient(response_content=response)
@@ -262,6 +326,7 @@ def test_day_8_executes_complete_plan_with_one_model_preflight() -> None:
     semantic = batch["runs"][3]
     reinforced = batch["runs"][6]
     assert semantic["request"]["messages"][1] == reinforced["request"]["messages"][1]
+    assert "<user_request>" not in semantic["request"]["messages"][1]["content"]
     assert semantic["request"]["messages"][0] != reinforced["request"]["messages"][0]
 
 

@@ -104,6 +104,13 @@ def planned_runs(definition: dict[str, Any]) -> list[dict[str, Any]]:
         system_message = scenario.get("system_message")
         if not isinstance(system_message, str) or not system_message:
             raise ValueError(f"planned scenario {scenario_name} needs a system message")
+        user_request = scenario.get("user_request")
+        if user_request is not None and (
+            not isinstance(user_request, str) or not user_request.strip()
+        ):
+            raise ValueError(
+                f"planned scenario {scenario_name} user request must be a non-empty string"
+            )
         notes = scenario.get("notes")
         if not isinstance(notes, list) or not notes or not all(isinstance(x, str) for x in notes):
             raise ValueError(f"planned scenario {scenario_name} needs fixture note paths")
@@ -208,13 +215,20 @@ def select_model(tags: dict[str, Any], expected: dict[str, Any]) -> dict[str, An
     return model
 
 
-def build_user_message(notes: list[dict[str, str]], target: dict[str, str]) -> str:
+def build_user_message(
+    notes: list[dict[str, str]],
+    target: dict[str, str],
+    user_request: str | None = None,
+) -> str:
     """Deliberately place all selected notes and the target in one model-visible message."""
     note_blocks = "\n".join(
         f'<note path="{note["path"]}">\n{note["content"]}</note>' for note in notes
     )
+    request_block = (
+        f"<user_request>\n{user_request}\n</user_request>\n" if user_request is not None else ""
+    )
     return (
-        f"<reference_notes>\n{note_blocks}\n</reference_notes>\n"
+        f"{request_block}<reference_notes>\n{note_blocks}\n</reference_notes>\n"
         f"<target_document>\n{target['content']}</target_document>"
     )
 
@@ -279,7 +293,10 @@ def _run_scenario(
     target = read_fixture(definition["target"], experiment)
     messages = [
         {"role": "system", "content": system_message},
-        {"role": "user", "content": build_user_message(notes, target)},
+        {
+            "role": "user",
+            "content": build_user_message(notes, target, scenario_definition.get("user_request")),
+        },
     ]
     payload = {
         "model": definition["model"]["name"],

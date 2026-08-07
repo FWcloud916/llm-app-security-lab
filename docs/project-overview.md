@@ -26,7 +26,7 @@ artifacts and their verification.
 
 - Cloud model adapters are not enabled.
 - Tools, browser rendering, automated sinks, and external communication are intentionally absent
-  from the Day 4, Day 5, Day 7, and Day 8 model bundles.
+  from the Day 4, Day 5, Day 7, Day 8, and Day 9 model bundles.
 - The model artifact is not distributed through this repository.
 
 ## 2. Tech Stack
@@ -117,8 +117,10 @@ llm-security-authority-report <raw-json>
 
 The legacy command defaults to `day-04-vulnerable-baseline`. A schema-v2 experiment selects one
 scenario and optionally repeats identical options. A schema-v3 experiment uses `--run-plan` to
-execute every declared run once in manifest order; each scenario owns its system message, notes, run
-IDs, seeds, and temperatures. The raw schema-v2 planned batch retains every request and response.
+execute every declared run once in manifest order; each scenario owns its system message, optional
+current user request, notes, run IDs, seeds, and temperatures. A declared user request is serialized
+before the reference notes; omitting it preserves the earlier message shape. The raw schema-v2
+planned batch retains every request and response.
 Its reporter rejects missing, duplicated, reordered, or unplanned options before printing a
 sanitized summary. Invalid bundles, scenarios, fixtures, model digest mismatches, mixed batches, and
 Ollama failures return exit status 1. The authority runner executes the complete fixed case matrix
@@ -136,11 +138,12 @@ N/A — the project has no worker, queue, scheduler, daemon, or recurring task.
 | Ollama API | `src/llm_security_lab/ollama.py` | Plain HTTP to `127.0.0.1`; only `/api/*` paths accepted for Day 4/5 |
 | Day 6 authority runner | `src/llm_security_lab/authority.py` | Offline deterministic evaluator; no network or model |
 
-The Day 4, Day 5, Day 7, and Day 8 bundles call `GET /api/version`, `GET /api/tags`, and
+The Day 4, Day 5, Day 7, Day 8, and Day 9 bundles call `GET /api/version`, `GET /api/tags`, and
 `POST /api/chat`. No cloud API, credential, tool schema, browser, or downstream action is configured.
 Day 7 adds an optional `response_markers` list to its schema-v2 definition; every marker produces one
 `<id>_in_model_response` boolean observation while older bundle evidence remains unchanged. Day 8
-uses schema v3 to predeclare a complete multi-scenario option sequence without CLI overrides.
+uses schema v3 to predeclare a complete multi-scenario option sequence without CLI overrides. Day 9
+adds an optional scenario-level user request while retaining the same fixed-plan and evidence rules.
 
 ## 9. Database / Data Stores
 

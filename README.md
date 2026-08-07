@@ -80,6 +80,22 @@ uv run llm-security-report evidence/raw/day-08/results.json
 The reporter verifies exact run order and options before rendering counts. Day 8 remains synthetic,
 loopback-only, and has no tools, renderer, automatic action, or outbound sink.
 
+The Day 9 experiment uses one shared payload to compare a direct current-user request with an
+indirect synthetic note. All three scenarios use the same ten predeclared seeds and sampling
+options:
+
+```bash
+uv run llm-security-lab \
+  --experiment day-09-direct-vs-indirect-injection \
+  --run-plan > evidence/raw/day-09/results.json
+uv run llm-security-report evidence/raw/day-09/results.json
+```
+
+Schema-v3 scenarios may declare an optional non-empty `user_request`. When present, the runner
+serializes it in a `<user_request>` block before reference notes; older bundles that omit the field
+retain their original message bytes. Day 9 remains synthetic and loopback-only, with stdout as its
+only sink.
+
 The Day 6 authority experiment runs all four synthetic cases without Ollama, network access,
 resource-content reads, or downstream actions:
 

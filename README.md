@@ -8,6 +8,7 @@ A versioned, synthetic-data lab for reproducing the LLM application-security exp
 - Runs independent, versioned experiment bundles against a loopback Ollama endpoint.
 - Fails closed when the configured model tag no longer matches the recorded full digest.
 - Prints the full fixtures, request, model metadata, response, token counts, and timings as JSON.
+- Executes predeclared schema-v3 run plans without prompt, seed, or temperature CLI overrides.
 - Runs the Day 6 deterministic authority-boundary bundle without a model or network call.
 - Preserves stable milestone tags so an article can point to the exact code it described.
 
@@ -64,6 +65,20 @@ uv run llm-security-report evidence/raw/day-07/behavior-only.json
 
 Day 7 uses the same loopback-only model boundary as Day 4 and Day 5. It does not enable tools,
 rendering, automatic actions, or outbound communication.
+
+The Day 8 mechanism experiment fixes six scenarios and 32 run IDs before inference. Phase A keeps
+sampling fixed; Phase B compares the same semantic payload under baseline and reinforced system
+messages with ten predeclared seeds per prompt:
+
+```bash
+uv run llm-security-lab \
+  --experiment day-08-prompt-injection-mechanism \
+  --run-plan > evidence/raw/day-08/results.json
+uv run llm-security-report evidence/raw/day-08/results.json
+```
+
+The reporter verifies exact run order and options before rendering counts. Day 8 remains synthetic,
+loopback-only, and has no tools, renderer, automatic action, or outbound sink.
 
 The Day 6 authority experiment runs all four synthetic cases without Ollama, network access,
 resource-content reads, or downstream actions:

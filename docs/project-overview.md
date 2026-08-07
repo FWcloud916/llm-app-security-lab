@@ -26,7 +26,7 @@ artifacts and their verification.
 
 - Cloud model adapters are not enabled.
 - Tools, browser rendering, automated sinks, and external communication are intentionally absent
-  from the Day 4, Day 5, and Day 7 model bundles.
+  from the Day 4, Day 5, Day 7, and Day 8 model bundles.
 - The model artifact is not distributed through this repository.
 
 ## 2. Tech Stack
@@ -77,7 +77,7 @@ versioned experiment bundle
 ```text
 .
 ├── src/llm_security_lab/
-│   ├── cli.py                 # Experiment selection, repetition, and raw JSON output
+│   ├── cli.py                 # Experiment selection, repetition or fixed plans, and raw JSON output
 │   ├── lab.py                 # Bundle, fixture, digest, request, and evidence flow
 │   ├── report.py              # Sanitized repeated-run summary
 │   └── ollama.py              # Loopback-only JSON client
@@ -109,19 +109,21 @@ The public runner and reporter interfaces are:
 ```text
 llm-security-lab --scenario {clean,attack}
 llm-security-lab --experiment <experiment-id> --scenario <name> [--repeat N]
+llm-security-lab --experiment <schema-v3-experiment-id> --run-plan
 llm-security-report <raw-json>
 llm-security-authority --experiment day-06-authority-boundary
 llm-security-authority-report <raw-json>
 ```
 
-The legacy command defaults to `day-04-vulnerable-baseline`. An explicit experiment selects one
-bundle and writes complete JSON evidence to stdout; repetitions produce one batch containing every
-full run plus aggregate predicates. The reporter verifies that the batch is complete and internally
-consistent before printing a sanitized summary. Invalid bundles, scenarios, fixtures, model digest
-mismatches, mixed batches, and Ollama failures return exit status 1. The authority runner executes
-the complete fixed case matrix once, evaluates proposals against synthetic trusted application state
-and policy, and its reporter verifies expected decisions and event counts without printing raw model
-output or identity fixtures.
+The legacy command defaults to `day-04-vulnerable-baseline`. A schema-v2 experiment selects one
+scenario and optionally repeats identical options. A schema-v3 experiment uses `--run-plan` to
+execute every declared run once in manifest order; each scenario owns its system message, notes, run
+IDs, seeds, and temperatures. The raw schema-v2 planned batch retains every request and response.
+Its reporter rejects missing, duplicated, reordered, or unplanned options before printing a
+sanitized summary. Invalid bundles, scenarios, fixtures, model digest mismatches, mixed batches, and
+Ollama failures return exit status 1. The authority runner executes the complete fixed case matrix
+once, evaluates proposals against synthetic trusted application state and policy, and its reporter
+verifies expected decisions and event counts without printing raw model output or identity fixtures.
 
 ## 7. Background Jobs & Scheduled Tasks
 
@@ -134,10 +136,11 @@ N/A — the project has no worker, queue, scheduler, daemon, or recurring task.
 | Ollama API | `src/llm_security_lab/ollama.py` | Plain HTTP to `127.0.0.1`; only `/api/*` paths accepted for Day 4/5 |
 | Day 6 authority runner | `src/llm_security_lab/authority.py` | Offline deterministic evaluator; no network or model |
 
-The Day 4, Day 5, and Day 7 bundles call `GET /api/version`, `GET /api/tags`, and `POST /api/chat`. No
-cloud API, credential, tool schema, browser, or downstream action is configured. Day 7 adds an
-optional `response_markers` list to its schema-v2 definition; every marker produces one
-`<id>_in_model_response` boolean observation while older bundle evidence remains unchanged.
+The Day 4, Day 5, Day 7, and Day 8 bundles call `GET /api/version`, `GET /api/tags`, and
+`POST /api/chat`. No cloud API, credential, tool schema, browser, or downstream action is configured.
+Day 7 adds an optional `response_markers` list to its schema-v2 definition; every marker produces one
+`<id>_in_model_response` boolean observation while older bundle evidence remains unchanged. Day 8
+uses schema v3 to predeclare a complete multi-scenario option sequence without CLI overrides.
 
 ## 9. Database / Data Stores
 
@@ -158,7 +161,7 @@ N/A — the project is a local CLI lab and has no deployed service or automated 
 ### Configuration Hierarchy
 
 1. The selected experiment bundle defines the model, digest, options, prompt, target, and note order.
-2. The CLI selects one named scenario only.
+2. The CLI selects one schema-v2 scenario or executes one complete schema-v3 run plan.
 3. `OllamaClient` fixes the default origin and rejects non-loopback alternatives.
 
 The project intentionally has no `.env` configuration for the Day 4 baseline.

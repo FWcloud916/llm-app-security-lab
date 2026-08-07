@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -14,8 +15,12 @@ EXPECTED_DIGEST = "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf98
 CANARY = "LAB_ONLY_CANARY_7K4M_20260806"
 DAY_5 = "day-05-threat-flow-observation"
 DAY_7 = "day-07-boundary-crossing-warmup"
+DAY_8 = "day-08-prompt-injection-mechanism"
 DAY_7_CANARY = "LAB_ONLY_DAY7_CANARY_6Q9V_20260807"
 OVERRIDE_MARKER = "DAY7_OVERRIDE_ACCEPTED"
+DAY_8_CANARY = "LAB_ONLY_DAY8_CANARY_4R7N_20260807"
+DAY_8_TARGET = "DAY8_TARGET_COMPLETED"
+DAY_8_INJECTION = "DAY8_INJECTION_ACCEPTED"
 
 
 class FakeClient:
@@ -29,12 +34,17 @@ class FakeClient:
         self.digest = digest
         self.response_content = response_content
         self.chat_payload: dict[str, Any] | None = None
+        self.chat_payloads: list[dict[str, Any]] = []
         self.chat_calls = 0
+        self.version_calls = 0
+        self.tags_calls = 0
 
     def request_json(self, path: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
         if path == "/api/version":
+            self.version_calls += 1
             return {"version": "test"}
         if path == "/api/tags":
+            self.tags_calls += 1
             return {
                 "models": [
                     {
@@ -47,6 +57,8 @@ class FakeClient:
         if path == "/api/chat":
             self.chat_calls += 1
             self.chat_payload = payload
+            assert payload is not None
+            self.chat_payloads.append(payload)
             return {"message": {"role": "assistant", "content": self.response_content}}
         raise AssertionError(f"unexpected path: {path}")
 
@@ -56,6 +68,7 @@ def test_experiment_bundles_are_discoverable() -> None:
         "day-04-vulnerable-baseline",
         DAY_5,
         DAY_7,
+        DAY_8,
     ]
 
 
@@ -198,6 +211,85 @@ def test_day_7_scenarios_add_only_the_declared_attack_note() -> None:
         assert {fixture["path"] for fixture in evidence["fixtures"]["notes"]} == expected
         assert client.chat_payload is not None
         assert "tools" not in client.chat_payload
+
+
+def test_day_8_plan_is_fixed_before_execution() -> None:
+    definition = lab.load_definition(DAY_8)
+    plan = lab.planned_runs(definition)
+
+    assert len(plan) == 32
+    assert [item["run_id"] for item in plan[:3]] == [
+        "a-clean-01",
+        "a-clean-02",
+        "a-clean-03",
+    ]
+    assert [item["options"]["seed"] for item in plan[12:22]] == list(range(201, 211))
+    assert [item["options"]["seed"] for item in plan[22:32]] == list(range(201, 211))
+    assert {item["options"]["temperature"] for item in plan[:12]} == {0}
+    assert {item["options"]["temperature"] for item in plan[12:]} == {0.7}
+
+
+def test_day_8_executes_complete_plan_with_one_model_preflight() -> None:
+    response = f"{DAY_8_TARGET}\n{DAY_8_INJECTION}\nLEAKED: {DAY_8_CANARY}"
+    client = FakeClient(response_content=response)
+
+    batch = lab.run_planned(DAY_8, client=client)
+
+    assert batch["schema_version"] == 2
+    assert client.version_calls == 1
+    assert client.tags_calls == 1
+    assert client.chat_calls == 32
+    assert [run["run_id"] for run in batch["runs"]] == [
+        item["run_id"] for item in batch["run_plan"]
+    ]
+    assert batch["summary"]["scenario_order"] == [
+        "phase-a-clean",
+        "phase-a-semantic",
+        "phase-a-reinforced",
+        "phase-a-delimiter-break",
+        "phase-b-semantic-baseline",
+        "phase-b-semantic-reinforced",
+    ]
+    assert batch["summary"]["scenarios"]["phase-a-semantic"]["true_counts"] == {
+        "canary_in_request": 3,
+        "canary_in_model_response": 3,
+        "canary_in_fixture_evidence": 3,
+        "canary_in_full_stdout": 3,
+        "target_marker_in_model_response": 3,
+        "injection_marker_in_model_response": 3,
+    }
+
+    semantic = batch["runs"][3]
+    reinforced = batch["runs"][6]
+    assert semantic["request"]["messages"][1] == reinforced["request"]["messages"][1]
+    assert semantic["request"]["messages"][0] != reinforced["request"]["messages"][0]
+
+
+def test_planned_summary_rejects_reordered_and_unplanned_options() -> None:
+    client = FakeClient(response_content=DAY_8_TARGET)
+    batch = lab.run_planned(DAY_8, client=client)
+    reordered = deepcopy(batch["runs"])
+    reordered[0], reordered[1] = reordered[1], reordered[0]
+
+    with pytest.raises(ValueError, match="order or id changed"):
+        lab.summarize_planned_runs(reordered, batch["run_plan"])
+
+    changed = deepcopy(batch["runs"])
+    changed[0]["request"]["options"]["seed"] = 999
+    with pytest.raises(ValueError, match="options changed"):
+        lab.summarize_planned_runs(changed, batch["run_plan"])
+
+
+def test_planned_summary_rejects_duplicate_run_ids() -> None:
+    client = FakeClient(response_content=DAY_8_TARGET)
+    batch = lab.run_planned(DAY_8, client=client)
+    duplicated_plan = deepcopy(batch["run_plan"])
+    duplicated_runs = deepcopy(batch["runs"])
+    duplicated_plan[1]["run_id"] = duplicated_plan[0]["run_id"]
+    duplicated_runs[1]["run_id"] = duplicated_runs[0]["run_id"]
+
+    with pytest.raises(ValueError, match="duplicate run ids"):
+        lab.summarize_planned_runs(duplicated_runs, duplicated_plan)
 
 
 @pytest.mark.parametrize(

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from copy import deepcopy
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Protocol
@@ -16,6 +17,7 @@ EXPERIMENTS_ROOT = PROJECT_ROOT / "experiments"
 DEFAULT_EXPERIMENT = "day-04-vulnerable-baseline"
 EXPERIMENT_ID_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 RESPONSE_MARKER_ID_PATTERN = re.compile(r"[a-z][a-z0-9_]*\Z")
+RUN_ID_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 CANARY_PREDICATE_NAMES = {
     "canary_in_request",
     "canary_in_model_response",
@@ -47,7 +49,7 @@ def available_experiments() -> list[str]:
             definition = json.loads(definition_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             continue
-        if definition.get("schema_version") == 2 and "model" in definition:
+        if definition.get("schema_version") in {2, 3} and "model" in definition:
             names.append(path.name)
     return sorted(names)
 
@@ -69,12 +71,73 @@ def experiment_root(experiment: str) -> Path:
 def load_definition(experiment: str = DEFAULT_EXPERIMENT) -> dict[str, Any]:
     """Load and validate one versioned experiment definition."""
     definition = json.loads((experiment_root(experiment) / "experiment.json").read_text("utf-8"))
-    if definition.get("schema_version") != 2:
+    if definition.get("schema_version") not in {2, 3}:
         raise ValueError("unsupported experiment schema version")
     if definition.get("id") != experiment:
         raise ValueError("experiment id does not match its bundle directory")
     response_markers(definition)
+    if definition["schema_version"] == 3:
+        planned_runs(definition)
     return definition
+
+
+def planned_runs(definition: dict[str, Any]) -> list[dict[str, Any]]:
+    """Validate and flatten a schema-v3 run plan in declared execution order."""
+    if definition.get("schema_version") != 3:
+        raise ValueError("planned runs require experiment schema version 3")
+    if "options" in definition.get("model", {}):
+        raise ValueError("schema-v3 options must be declared by each planned run")
+    if "system_message" in definition:
+        raise ValueError("schema-v3 system messages must be declared by each scenario")
+
+    scenarios = definition.get("scenarios")
+    if not isinstance(scenarios, dict) or not scenarios:
+        raise ValueError("schema-v3 scenarios must be a non-empty object")
+
+    plan: list[dict[str, Any]] = []
+    seen_run_ids: set[str] = set()
+    for scenario_name, scenario in scenarios.items():
+        if not isinstance(scenario_name, str) or not RUN_ID_PATTERN.fullmatch(scenario_name):
+            raise ValueError("planned scenario ids must use lowercase kebab-case")
+        if not isinstance(scenario, dict):
+            raise ValueError(f"planned scenario {scenario_name} must be an object")
+        system_message = scenario.get("system_message")
+        if not isinstance(system_message, str) or not system_message:
+            raise ValueError(f"planned scenario {scenario_name} needs a system message")
+        notes = scenario.get("notes")
+        if not isinstance(notes, list) or not notes or not all(isinstance(x, str) for x in notes):
+            raise ValueError(f"planned scenario {scenario_name} needs fixture note paths")
+        runs = scenario.get("runs")
+        if not isinstance(runs, list) or not runs or len(runs) > 20:
+            raise ValueError(f"planned scenario {scenario_name} needs between 1 and 20 runs")
+
+        for item in runs:
+            if not isinstance(item, dict):
+                raise ValueError(f"every planned run in {scenario_name} must be an object")
+            run_id = item.get("id")
+            if not isinstance(run_id, str) or not RUN_ID_PATTERN.fullmatch(run_id):
+                raise ValueError("planned run ids must use lowercase kebab-case")
+            if run_id in seen_run_ids:
+                raise ValueError(f"duplicate planned run id: {run_id}")
+            options = item.get("options")
+            if not isinstance(options, dict):
+                raise ValueError(f"planned run {run_id} needs an options object")
+            seed = options.get("seed")
+            temperature = options.get("temperature")
+            if not isinstance(seed, int) or isinstance(seed, bool):
+                raise ValueError(f"planned run {run_id} needs an integer seed")
+            if (
+                not isinstance(temperature, int | float)
+                or isinstance(temperature, bool)
+                or temperature < 0
+            ):
+                raise ValueError(f"planned run {run_id} needs a non-negative temperature")
+            seen_run_ids.add(run_id)
+            plan.append({"run_id": run_id, "scenario": scenario_name, "options": deepcopy(options)})
+
+    if len(plan) > 100:
+        raise ValueError("a planned experiment may contain at most 100 runs")
+    return plan
 
 
 def response_markers(definition: dict[str, Any]) -> list[dict[str, str]]:
@@ -198,32 +261,31 @@ def _marker_observations(
     return observations
 
 
-def run(
+def _run_scenario(
+    *,
+    definition: dict[str, Any],
     scenario: str,
-    client: JsonClient | None = None,
-    experiment: str = DEFAULT_EXPERIMENT,
+    scenario_definition: dict[str, Any],
+    system_message: str,
+    options: dict[str, Any],
+    ollama: JsonClient,
+    experiment: str,
+    version: dict[str, Any],
+    model: dict[str, Any],
+    run_id: str | None = None,
 ) -> dict[str, Any]:
-    """Run one scenario and retain the full request, fixtures, model, and response."""
-    definition = load_definition(experiment)
-    scenario_definition = definition["scenarios"].get(scenario)
-    if scenario_definition is None:
-        choices = ", ".join(sorted(definition["scenarios"]))
-        raise ValueError(f"unknown scenario {scenario!r}; choose one of: {choices}")
-
-    ollama = client or OllamaClient()
+    """Execute one already validated scenario with preflighted model metadata."""
     notes = [read_fixture(path, experiment) for path in scenario_definition["notes"]]
     target = read_fixture(definition["target"], experiment)
-    version = ollama.request_json("/api/version")
-    model = select_model(ollama.request_json("/api/tags"), definition["model"])
     messages = [
-        {"role": "system", "content": definition["system_message"]},
+        {"role": "system", "content": system_message},
         {"role": "user", "content": build_user_message(notes, target)},
     ]
     payload = {
         "model": definition["model"]["name"],
         "messages": messages,
         "stream": False,
-        "options": definition["model"]["options"],
+        "options": deepcopy(options),
     }
     response = ollama.request_json("/api/chat", payload)
     fixtures = {"notes": notes, "target": target}
@@ -248,7 +310,39 @@ def run(
     observations = _marker_observations(definition, fixtures, payload, response, evidence)
     if observations is not None:
         evidence["observations"] = observations
+    if run_id is not None:
+        evidence["run_id"] = run_id
     return evidence
+
+
+def run(
+    scenario: str,
+    client: JsonClient | None = None,
+    experiment: str = DEFAULT_EXPERIMENT,
+) -> dict[str, Any]:
+    """Run one schema-v2 scenario and retain full request, fixtures, model, and response."""
+    definition = load_definition(experiment)
+    if definition["schema_version"] != 2:
+        raise ValueError("schema-v3 experiments must execute their complete run plan")
+    scenario_definition = definition["scenarios"].get(scenario)
+    if scenario_definition is None:
+        choices = ", ".join(sorted(definition["scenarios"]))
+        raise ValueError(f"unknown scenario {scenario!r}; choose one of: {choices}")
+
+    ollama = client or OllamaClient()
+    version = ollama.request_json("/api/version")
+    model = select_model(ollama.request_json("/api/tags"), definition["model"])
+    return _run_scenario(
+        definition=definition,
+        scenario=scenario,
+        scenario_definition=scenario_definition,
+        system_message=definition["system_message"],
+        options=definition["model"]["options"],
+        ollama=ollama,
+        experiment=experiment,
+        version=version,
+        model=model,
+    )
 
 
 def summarize_runs(runs: list[dict[str, Any]]) -> dict[str, Any]:
@@ -333,4 +427,153 @@ def run_repeated(
         "repeat": repeat,
         "runs": runs,
         "summary": summarize_runs(runs),
+    }
+
+
+def summarize_planned_runs(
+    runs: list[dict[str, Any]], run_plan: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Validate exact planned-run order/options and aggregate every scenario."""
+    if not runs or not isinstance(run_plan, list) or len(runs) != len(run_plan):
+        raise ValueError("planned evidence is incomplete")
+
+    expected_ids: list[str] = []
+    actual_ids: list[str] = []
+    for index, (run_evidence, planned) in enumerate(zip(runs, run_plan, strict=True), start=1):
+        if not isinstance(planned, dict):
+            raise ValueError(f"planned run {index} must be an object")
+        run_id = planned.get("run_id")
+        scenario = planned.get("scenario")
+        options = planned.get("options")
+        if (
+            not isinstance(run_id, str)
+            or not isinstance(scenario, str)
+            or not isinstance(options, dict)
+        ):
+            raise ValueError(f"planned run {index} is malformed")
+        expected_ids.append(run_id)
+        actual_ids.append(run_evidence.get("run_id"))
+        if run_evidence.get("run_id") != run_id:
+            raise ValueError("planned evidence run order or id changed")
+        if run_evidence.get("scenario") != scenario:
+            raise ValueError(f"planned run {run_id} scenario changed")
+        if run_evidence.get("request", {}).get("options") != options:
+            raise ValueError(f"planned run {run_id} options changed")
+    if len(set(expected_ids)) != len(expected_ids) or len(set(actual_ids)) != len(actual_ids):
+        raise ValueError("planned evidence contains duplicate run ids")
+
+    common_fingerprints = {
+        json.dumps(
+            {
+                "scenario_id": item.get("scenario_id"),
+                "ollama_version": item.get("ollama_version"),
+                "model": item.get("model"),
+                "safety_boundary": item.get("safety_boundary"),
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+        for item in runs
+    }
+    if len(common_fingerprints) != 1:
+        raise ValueError("planned runs contain mixed model environments")
+
+    scenario_runs: dict[str, list[dict[str, Any]]] = {}
+    for item in runs:
+        scenario_runs.setdefault(item["scenario"], []).append(item)
+
+    scenario_summaries: dict[str, Any] = {}
+    for scenario, items in scenario_runs.items():
+        static_fingerprints = {
+            json.dumps(
+                {
+                    "messages": item.get("request", {}).get("messages"),
+                    "fixtures": [
+                        {"path": fixture.get("path"), "sha256": fixture.get("sha256")}
+                        for fixture in [
+                            *item.get("fixtures", {}).get("notes", []),
+                            item.get("fixtures", {}).get("target", {}),
+                        ]
+                    ],
+                },
+                ensure_ascii=False,
+                sort_keys=True,
+            )
+            for item in items
+        }
+        if len(static_fingerprints) != 1:
+            raise ValueError(f"planned scenario {scenario} changed model-visible inputs")
+
+        observations = [item.get("observations") for item in items]
+        if not all(isinstance(observation, dict) for observation in observations):
+            raise ValueError("every planned run must contain marker observations")
+        predicate_names = tuple(
+            name
+            for name, value in observations[0].items()
+            if name != "marker_id" and isinstance(value, bool)
+        )
+        if not predicate_names:
+            raise ValueError("planned runs must contain at least one boolean marker predicate")
+        expected_names = set(predicate_names)
+        for observation in observations:
+            actual_names = {
+                name
+                for name, value in observation.items()
+                if name != "marker_id" and isinstance(value, bool)
+            }
+            if actual_names != expected_names:
+                raise ValueError("planned runs contain inconsistent marker predicates")
+        scenario_summaries[scenario] = {
+            "runs": len(items),
+            "true_counts": {
+                name: sum(bool(observation[name]) for observation in observations)
+                for name in predicate_names
+            },
+        }
+
+    return {
+        "experiment_id": runs[0].get("scenario_id"),
+        "model_digest": runs[0].get("model", {}).get("digest"),
+        "runs": len(runs),
+        "scenario_order": list(scenario_runs),
+        "scenarios": scenario_summaries,
+    }
+
+
+def run_planned(
+    experiment: str,
+    client: JsonClient | None = None,
+) -> dict[str, Any]:
+    """Execute one schema-v3 plan exactly once in declared order."""
+    definition = load_definition(experiment)
+    if definition["schema_version"] != 3:
+        raise ValueError("complete run plans require experiment schema version 3")
+
+    plan = planned_runs(definition)
+    ollama = client or OllamaClient()
+    version = ollama.request_json("/api/version")
+    model = select_model(ollama.request_json("/api/tags"), definition["model"])
+    runs = []
+    for item in plan:
+        scenario_definition = definition["scenarios"][item["scenario"]]
+        runs.append(
+            _run_scenario(
+                definition=definition,
+                scenario=item["scenario"],
+                scenario_definition=scenario_definition,
+                system_message=scenario_definition["system_message"],
+                options=item["options"],
+                ollama=ollama,
+                experiment=experiment,
+                version=version,
+                model=model,
+                run_id=item["run_id"],
+            )
+        )
+    return {
+        "schema_version": 2,
+        "experiment_id": experiment,
+        "run_plan": plan,
+        "runs": runs,
+        "summary": summarize_planned_runs(runs, plan),
     }

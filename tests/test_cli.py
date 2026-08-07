@@ -15,3 +15,12 @@ def test_repeat_is_bounded() -> None:
     parser = cli.build_parser()
 
     assert parser.parse_args(["--scenario", "clean", "--repeat", "3"]).repeat == 3
+
+
+def test_planned_run_selector_is_explicit() -> None:
+    args = cli.build_parser().parse_args(
+        ["--experiment", "day-08-prompt-injection-mechanism", "--run-plan"]
+    )
+
+    assert args.run_plan is True
+    assert args.scenario is None

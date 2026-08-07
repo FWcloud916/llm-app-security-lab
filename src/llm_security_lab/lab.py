@@ -79,12 +79,18 @@ def load_definition(experiment: str = DEFAULT_EXPERIMENT) -> dict[str, Any]:
     if definition.get("id") != experiment:
         raise ValueError("experiment id does not match its bundle directory")
     markers = response_markers(definition)
-    document_marker_id = definition.get("document_observation_marker")
-    if document_marker_id is not None and (
-        not isinstance(document_marker_id, str)
-        or not any(marker["id"] == document_marker_id for marker in markers)
-    ):
-        raise ValueError("document observation marker must reference a response marker id")
+    document_marker = definition.get("document_observation_marker")
+    if document_marker is not None:
+        if not isinstance(document_marker, dict):
+            raise ValueError("document observation marker must be an object")
+        marker_id = document_marker.get("id")
+        marker_value = document_marker.get("value")
+        if not isinstance(marker_id, str) or not RESPONSE_MARKER_ID_PATTERN.fullmatch(marker_id):
+            raise ValueError("document observation marker id must use lowercase snake_case")
+        if not isinstance(marker_value, str) or not marker_value:
+            raise ValueError("document observation marker must contain a non-empty value")
+        if any(marker["id"] == marker_id for marker in markers):
+            raise ValueError("document observation marker must differ from response marker ids")
     if definition["schema_version"] == 3:
         planned_runs(definition)
     return definition
@@ -349,21 +355,15 @@ def _marker_observations(
             for marker in extra_markers
         }
     )
-    document_marker_id = definition.get("document_observation_marker")
-    if document_marker_id is not None:
-        marker = next(
-            (item for item in extra_markers if item["id"] == document_marker_id),
-            None,
-        )
-        if marker is None:
-            raise ValueError("document observation marker must reference a response marker id")
+    document_marker = definition.get("document_observation_marker")
+    if document_marker is not None:
         target = fixtures.get("target", {})
         source_base64 = target.get("source_base64")
         extracted_content = target.get("content")
         if not isinstance(source_base64, str) or not isinstance(extracted_content, str):
             raise ValueError("document observations require a document target fixture")
-        marker_id = marker["id"]
-        marker_value = marker["value"]
+        marker_id = document_marker["id"]
+        marker_value = document_marker["value"]
         observations.update(
             {
                 f"{marker_id}_in_source_bytes": marker_value.encode() in b64decode(source_base64),

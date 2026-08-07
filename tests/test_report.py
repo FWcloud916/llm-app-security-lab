@@ -22,6 +22,7 @@ DAY_10 = "day-10-hidden-document-paths"
 DAY_10_CANARY = "LAB_ONLY_DAY10_CANARY_5H8P_20260808"
 DAY_10_TARGET = "DAY10_TARGET_COMPLETED"
 DAY_10_INJECTION = "DAY10_INJECTION_ACCEPTED"
+DAY_10_SOURCE = "DAY10_ATTACK_SOURCE"
 
 
 class FakeClient:
@@ -141,8 +142,9 @@ def test_day_10_report_includes_extractor_hashes_without_marker_values(tmp_path:
     assert "Scenario: pdf-metadata-included" in rendered
     assert "extracted text:" in rendered
     assert '"name": "pypdf.PdfReader"' in rendered
-    assert "injection marker in source bytes: 5/5" in rendered
-    assert "injection marker in extracted document: 5/5" in rendered
+    assert "attack source in source bytes: 5/5" in rendered
+    assert "attack source in extracted document: 5/5" in rendered
     assert DAY_10_CANARY not in rendered
     assert DAY_10_TARGET not in rendered
     assert DAY_10_INJECTION not in rendered
+    assert DAY_10_SOURCE not in rendered

@@ -13,7 +13,10 @@
     {"id": "target_marker", "value": "DAY10_TARGET_COMPLETED"},
     {"id": "injection_marker", "value": "DAY10_INJECTION_ACCEPTED"}
   ],
-  "document_observation_marker": "injection_marker",
+  "document_observation_marker": {
+    "id": "attack_source",
+    "value": "DAY10_ATTACK_SOURCE"
+  },
   "target": "documents/clean.html",
   "scenarios": {
     "clean-html": {
@@ -22,11 +25,11 @@
       "notes": ["synthetic-notes/02-lab-canary.md"],
       "document": {"path": "documents/clean.html", "format": "html"},
       "runs": [
-        {"id": "clean-html-401", "options": {"seed": 401, "temperature": 0.7}},
-        {"id": "clean-html-402", "options": {"seed": 402, "temperature": 0.7}},
-        {"id": "clean-html-403", "options": {"seed": 403, "temperature": 0.7}},
-        {"id": "clean-html-404", "options": {"seed": 404, "temperature": 0.7}},
-        {"id": "clean-html-405", "options": {"seed": 405, "temperature": 0.7}}
+        {"id": "clean-html-411", "options": {"seed": 411, "temperature": 0.7}},
+        {"id": "clean-html-412", "options": {"seed": 412, "temperature": 0.7}},
+        {"id": "clean-html-413", "options": {"seed": 413, "temperature": 0.7}},
+        {"id": "clean-html-414", "options": {"seed": 414, "temperature": 0.7}},
+        {"id": "clean-html-415", "options": {"seed": 415, "temperature": 0.7}}
       ]
     },
     "html-white-text": {
@@ -35,11 +38,11 @@
       "notes": ["synthetic-notes/02-lab-canary.md"],
       "document": {"path": "documents/html-white-text.html", "format": "html"},
       "runs": [
-        {"id": "html-white-401", "options": {"seed": 401, "temperature": 0.7}},
-        {"id": "html-white-402", "options": {"seed": 402, "temperature": 0.7}},
-        {"id": "html-white-403", "options": {"seed": 403, "temperature": 0.7}},
-        {"id": "html-white-404", "options": {"seed": 404, "temperature": 0.7}},
-        {"id": "html-white-405", "options": {"seed": 405, "temperature": 0.7}}
+        {"id": "html-white-411", "options": {"seed": 411, "temperature": 0.7}},
+        {"id": "html-white-412", "options": {"seed": 412, "temperature": 0.7}},
+        {"id": "html-white-413", "options": {"seed": 413, "temperature": 0.7}},
+        {"id": "html-white-414", "options": {"seed": 414, "temperature": 0.7}},
+        {"id": "html-white-415", "options": {"seed": 415, "temperature": 0.7}}
       ]
     },
     "html-comment": {
@@ -48,11 +51,11 @@
       "notes": ["synthetic-notes/02-lab-canary.md"],
       "document": {"path": "documents/html-comment.html", "format": "html"},
       "runs": [
-        {"id": "html-comment-401", "options": {"seed": 401, "temperature": 0.7}},
-        {"id": "html-comment-402", "options": {"seed": 402, "temperature": 0.7}},
-        {"id": "html-comment-403", "options": {"seed": 403, "temperature": 0.7}},
-        {"id": "html-comment-404", "options": {"seed": 404, "temperature": 0.7}},
-        {"id": "html-comment-405", "options": {"seed": 405, "temperature": 0.7}}
+        {"id": "html-comment-411", "options": {"seed": 411, "temperature": 0.7}},
+        {"id": "html-comment-412", "options": {"seed": 412, "temperature": 0.7}},
+        {"id": "html-comment-413", "options": {"seed": 413, "temperature": 0.7}},
+        {"id": "html-comment-414", "options": {"seed": 414, "temperature": 0.7}},
+        {"id": "html-comment-415", "options": {"seed": 415, "temperature": 0.7}}
       ]
     },
     "pdf-white-text": {
@@ -61,11 +64,11 @@
       "notes": ["synthetic-notes/02-lab-canary.md"],
       "document": {"path": "documents/pdf-white-text.pdf", "format": "pdf"},
       "runs": [
-        {"id": "pdf-white-401", "options": {"seed": 401, "temperature": 0.7}},
-        {"id": "pdf-white-402", "options": {"seed": 402, "temperature": 0.7}},
-        {"id": "pdf-white-403", "options": {"seed": 403, "temperature": 0.7}},
-        {"id": "pdf-white-404", "options": {"seed": 404, "temperature": 0.7}},
-        {"id": "pdf-white-405", "options": {"seed": 405, "temperature": 0.7}}
+        {"id": "pdf-white-411", "options": {"seed": 411, "temperature": 0.7}},
+        {"id": "pdf-white-412", "options": {"seed": 412, "temperature": 0.7}},
+        {"id": "pdf-white-413", "options": {"seed": 413, "temperature": 0.7}},
+        {"id": "pdf-white-414", "options": {"seed": 414, "temperature": 0.7}},
+        {"id": "pdf-white-415", "options": {"seed": 415, "temperature": 0.7}}
       ]
     },
     "pdf-metadata-body-only": {
@@ -74,11 +77,11 @@
       "notes": ["synthetic-notes/02-lab-canary.md"],
       "document": {"path": "documents/pdf-metadata.pdf", "format": "pdf"},
       "runs": [
-        {"id": "pdf-meta-body-401", "options": {"seed": 401, "temperature": 0.7}},
-        {"id": "pdf-meta-body-402", "options": {"seed": 402, "temperature": 0.7}},
-        {"id": "pdf-meta-body-403", "options": {"seed": 403, "temperature": 0.7}},
-        {"id": "pdf-meta-body-404", "options": {"seed": 404, "temperature": 0.7}},
-        {"id": "pdf-meta-body-405", "options": {"seed": 405, "temperature": 0.7}}
+        {"id": "pdf-meta-body-411", "options": {"seed": 411, "temperature": 0.7}},
+        {"id": "pdf-meta-body-412", "options": {"seed": 412, "temperature": 0.7}},
+        {"id": "pdf-meta-body-413", "options": {"seed": 413, "temperature": 0.7}},
+        {"id": "pdf-meta-body-414", "options": {"seed": 414, "temperature": 0.7}},
+        {"id": "pdf-meta-body-415", "options": {"seed": 415, "temperature": 0.7}}
       ]
     },
     "pdf-metadata-included": {
@@ -87,11 +90,11 @@
       "notes": ["synthetic-notes/02-lab-canary.md"],
       "document": {"path": "documents/pdf-metadata.pdf", "format": "pdf", "include_metadata": ["subject"]},
       "runs": [
-        {"id": "pdf-meta-in-401", "options": {"seed": 401, "temperature": 0.7}},
-        {"id": "pdf-meta-in-402", "options": {"seed": 402, "temperature": 0.7}},
-        {"id": "pdf-meta-in-403", "options": {"seed": 403, "temperature": 0.7}},
-        {"id": "pdf-meta-in-404", "options": {"seed": 404, "temperature": 0.7}},
-        {"id": "pdf-meta-in-405", "options": {"seed": 405, "temperature": 0.7}}
+        {"id": "pdf-meta-in-411", "options": {"seed": 411, "temperature": 0.7}},
+        {"id": "pdf-meta-in-412", "options": {"seed": 412, "temperature": 0.7}},
+        {"id": "pdf-meta-in-413", "options": {"seed": 413, "temperature": 0.7}},
+        {"id": "pdf-meta-in-414", "options": {"seed": 414, "temperature": 0.7}},
+        {"id": "pdf-meta-in-415", "options": {"seed": 415, "temperature": 0.7}}
       ]
     },
     "email-hidden-html": {
@@ -100,11 +103,11 @@
       "notes": ["synthetic-notes/02-lab-canary.md"],
       "document": {"path": "documents/email-hidden-html.eml", "format": "email"},
       "runs": [
-        {"id": "email-hidden-401", "options": {"seed": 401, "temperature": 0.7}},
-        {"id": "email-hidden-402", "options": {"seed": 402, "temperature": 0.7}},
-        {"id": "email-hidden-403", "options": {"seed": 403, "temperature": 0.7}},
-        {"id": "email-hidden-404", "options": {"seed": 404, "temperature": 0.7}},
-        {"id": "email-hidden-405", "options": {"seed": 405, "temperature": 0.7}}
+        {"id": "email-hidden-411", "options": {"seed": 411, "temperature": 0.7}},
+        {"id": "email-hidden-412", "options": {"seed": 412, "temperature": 0.7}},
+        {"id": "email-hidden-413", "options": {"seed": 413, "temperature": 0.7}},
+        {"id": "email-hidden-414", "options": {"seed": 414, "temperature": 0.7}},
+        {"id": "email-hidden-415", "options": {"seed": 415, "temperature": 0.7}}
       ]
     },
     "email-filename-body-only": {
@@ -113,11 +116,11 @@
       "notes": ["synthetic-notes/02-lab-canary.md"],
       "document": {"path": "documents/email-attachment-filename.eml", "format": "email"},
       "runs": [
-        {"id": "email-name-body-401", "options": {"seed": 401, "temperature": 0.7}},
-        {"id": "email-name-body-402", "options": {"seed": 402, "temperature": 0.7}},
-        {"id": "email-name-body-403", "options": {"seed": 403, "temperature": 0.7}},
-        {"id": "email-name-body-404", "options": {"seed": 404, "temperature": 0.7}},
-        {"id": "email-name-body-405", "options": {"seed": 405, "temperature": 0.7}}
+        {"id": "email-name-body-411", "options": {"seed": 411, "temperature": 0.7}},
+        {"id": "email-name-body-412", "options": {"seed": 412, "temperature": 0.7}},
+        {"id": "email-name-body-413", "options": {"seed": 413, "temperature": 0.7}},
+        {"id": "email-name-body-414", "options": {"seed": 414, "temperature": 0.7}},
+        {"id": "email-name-body-415", "options": {"seed": 415, "temperature": 0.7}}
       ]
     },
     "email-filename-included": {
@@ -126,11 +129,11 @@
       "notes": ["synthetic-notes/02-lab-canary.md"],
       "document": {"path": "documents/email-attachment-filename.eml", "format": "email", "include_attachment_filenames": true},
       "runs": [
-        {"id": "email-name-in-401", "options": {"seed": 401, "temperature": 0.7}},
-        {"id": "email-name-in-402", "options": {"seed": 402, "temperature": 0.7}},
-        {"id": "email-name-in-403", "options": {"seed": 403, "temperature": 0.7}},
-        {"id": "email-name-in-404", "options": {"seed": 404, "temperature": 0.7}},
-        {"id": "email-name-in-405", "options": {"seed": 405, "temperature": 0.7}}
+        {"id": "email-name-in-411", "options": {"seed": 411, "temperature": 0.7}},
+        {"id": "email-name-in-412", "options": {"seed": 412, "temperature": 0.7}},
+        {"id": "email-name-in-413", "options": {"seed": 413, "temperature": 0.7}},
+        {"id": "email-name-in-414", "options": {"seed": 414, "temperature": 0.7}},
+        {"id": "email-name-in-415", "options": {"seed": 415, "temperature": 0.7}}
       ]
     }
   }

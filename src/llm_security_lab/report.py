@@ -21,6 +21,9 @@ PREDICATE_LABELS = {
     "injection_marker_in_source_bytes": "injection marker in source bytes",
     "injection_marker_in_extracted_document": "injection marker in extracted document",
     "injection_marker_in_request": "injection marker in request",
+    "attack_source_in_source_bytes": "attack source in source bytes",
+    "attack_source_in_extracted_document": "attack source in extracted document",
+    "attack_source_in_request": "attack source in request",
 }
 
 

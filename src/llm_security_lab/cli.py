@@ -6,9 +6,11 @@ import argparse
 import json
 import sys
 import urllib.error
+from pathlib import Path
 
 from llm_security_lab.lab import (
     DEFAULT_EXPERIMENT,
+    PROJECT_ROOT,
     available_experiments,
     load_definition,
     run,
@@ -42,7 +44,26 @@ def build_parser() -> argparse.ArgumentParser:
         help="Execute every schema-v3 planned run exactly once in manifest order.",
     )
     parser.add_argument("--repeat", type=positive_int, default=1)
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="Write raw JSON under ignored evidence/raw/ or results/ instead of stdout.",
+    )
     return parser
+
+
+def write_raw_evidence(path: Path, evidence: dict[str, object]) -> Path:
+    """Write raw evidence only inside the repository's ignored evidence locations."""
+    resolved = path.resolve()
+    allowed_roots = [
+        (PROJECT_ROOT / "evidence" / "raw").resolve(),
+        (PROJECT_ROOT / "results").resolve(),
+    ]
+    if not any(resolved.is_relative_to(root) for root in allowed_roots):
+        raise ValueError("--output must be inside evidence/raw/ or results/")
+    resolved.parent.mkdir(parents=True, exist_ok=True)
+    resolved.write_text(json.dumps(evidence, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return resolved
 
 
 def main() -> int:
@@ -70,7 +91,11 @@ def main() -> int:
         print(f"lab failed: {error}", file=sys.stderr)
         return 1
 
-    print(json.dumps(evidence, ensure_ascii=False, indent=2))
+    if args.output is not None:
+        output_path = write_raw_evidence(args.output, evidence)
+        print(f"raw evidence written to {output_path}", file=sys.stderr)
+    else:
+        print(json.dumps(evidence, ensure_ascii=False, indent=2))
     return 0
 
 

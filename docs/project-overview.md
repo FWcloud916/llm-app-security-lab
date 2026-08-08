@@ -26,7 +26,7 @@ artifacts and their verification.
 
 - Cloud model adapters are not enabled.
 - Tools, browser rendering, OCR, automated sinks, and external communication are intentionally absent
-  from the Day 4, Day 5, Day 7, Day 8, Day 9, and Day 10 model bundles.
+  from the Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, and Day 11 model bundles.
 - The model artifact is not distributed through this repository.
 
 ## 2. Tech Stack
@@ -111,6 +111,7 @@ The public runner and reporter interfaces are:
 llm-security-lab --scenario {clean,attack}
 llm-security-lab --experiment <experiment-id> --scenario <name> [--repeat N]
 llm-security-lab --experiment <schema-v3-experiment-id> --run-plan
+llm-security-lab --experiment <schema-v3-experiment-id> --run-plan --output evidence/raw/<id>.json
 llm-security-report <raw-json>
 llm-security-authority --experiment day-06-authority-boundary
 llm-security-authority-report <raw-json>
@@ -119,8 +120,11 @@ llm-security-authority-report <raw-json>
 The legacy command defaults to `day-04-vulnerable-baseline`. A schema-v2 experiment selects one
 scenario and optionally repeats identical options. A schema-v3 experiment uses `--run-plan` to
 execute every declared run once in manifest order; each scenario owns its system message, optional
-current user request, notes, run IDs, seeds, and temperatures. A declared user request is serialized
-before the reference notes; omitting it preserves the earlier message shape. The raw schema-v2
+current user request or mutually exclusive `user_turns`, notes, run IDs, seeds, and temperatures. A
+declared user request is serialized before the reference notes; omitting it preserves the earlier
+message shape. A `user_turns` list contains 2–10 requests. Its first request carries the selected
+fixtures, later requests carry an explicit `<user_request>` label, and every API call receives the
+complete preceding user/assistant history. The raw schema-v2
 planned batch retains every request and response.
 Its reporter rejects missing, duplicated, reordered, or unplanned options before printing a
 sanitized summary. Invalid bundles, scenarios, fixtures, model digest mismatches, mixed batches, and
@@ -139,8 +143,9 @@ N/A — the project has no worker, queue, scheduler, daemon, or recurring task.
 | Ollama API | `src/llm_security_lab/ollama.py` | Plain HTTP to `127.0.0.1`; only `/api/*` paths accepted for Day 4/5 |
 | Day 6 authority runner | `src/llm_security_lab/authority.py` | Offline deterministic evaluator; no network or model |
 
-The Day 4, Day 5, Day 7, Day 8, Day 9, and Day 10 bundles call `GET /api/version`, `GET /api/tags`, and
-`POST /api/chat`. No cloud API, credential, tool schema, browser, or downstream action is configured.
+The Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, and Day 11 bundles call `GET /api/version`,
+`GET /api/tags`, and `POST /api/chat`. No cloud API, credential, tool schema, browser, or downstream
+action is configured.
 Day 7 adds an optional `response_markers` list to its schema-v2 definition; every marker produces one
 `<id>_in_model_response` boolean observation while older bundle evidence remains unchanged. Day 8
 uses schema v3 to predeclare a complete multi-scenario option sequence without CLI overrides. Day 9
@@ -149,6 +154,11 @@ Day 10 adds scenario-level synthetic HTML, PDF, and email extraction. Raw source
 extractor identity and policy, extracted text hash, serialized request, and model response remain
 separate evidence. PDF metadata and email attachment filenames enter context only when the scenario
 explicitly enables those application fields.
+Day 11 adds a backwards-compatible scenario-level multi-turn request list. Evidence stores each
+request/response pair in `conversation`, retains the final request/response at their existing
+top-level keys, evaluates response markers across every assistant turn, and excludes variable
+assistant text when comparing fixed scenario inputs across seeds. The fixed 30-run plan contains
+40 loopback chat calls because its Crescendo proxy uses three turns per run.
 
 ## 9. Database / Data Stores
 

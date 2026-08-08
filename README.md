@@ -110,6 +110,23 @@ uv run llm-security-report evidence/raw/day-10/results.json
 Day 10 uses Python's standard HTML/email parsers and locked pypdf 6.x. It does not fetch live
 content, render documents, run OCR, enable tools, or communicate outside loopback Ollama.
 
+The Day 11 experiment compares five safe jailbreak-pattern proxies with a clean control. It adds an
+optional schema-v3 `user_turns` list for true multi-turn conversations; later requests include the
+complete user/assistant history while single-turn bundles keep their existing request shape:
+
+```bash
+uv run llm-security-lab \
+  --experiment day-11-jailbreak-taxonomy \
+  --run-plan \
+  --output evidence/raw/day-11/results.json
+uv run llm-security-report evidence/raw/day-11/results.json
+```
+
+The plan contains 30 run units. Five three-turn Crescendo proxies make the runner issue 40 local
+chat calls in total. The raw evidence preserves every turn; the sanitized reporter prints only turn
+counts, fixed options, fixture hashes, and marker counts. Day 11 uses synthetic policy-bypass
+markers, has no harmful task, and keeps tools and outbound communication disabled.
+
 The Day 6 authority experiment runs all four synthetic cases without Ollama, network access,
 resource-content reads, or downstream actions:
 

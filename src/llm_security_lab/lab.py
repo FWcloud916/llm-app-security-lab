@@ -111,6 +111,7 @@ def planned_runs(definition: dict[str, Any]) -> list[dict[str, Any]]:
 
     plan: list[dict[str, Any]] = []
     seen_run_ids: set[str] = set()
+    planned_chat_calls = 0
     for scenario_name, scenario in scenarios.items():
         if not isinstance(scenario_name, str) or not RUN_ID_PATTERN.fullmatch(scenario_name):
             raise ValueError("planned scenario ids must use lowercase kebab-case")
@@ -125,6 +126,19 @@ def planned_runs(definition: dict[str, Any]) -> list[dict[str, Any]]:
         ):
             raise ValueError(
                 f"planned scenario {scenario_name} user request must be a non-empty string"
+            )
+        user_turns = scenario.get("user_turns")
+        if user_request is not None and user_turns is not None:
+            raise ValueError(
+                f"planned scenario {scenario_name} cannot declare both user_request and user_turns"
+            )
+        if user_turns is not None and (
+            not isinstance(user_turns, list)
+            or not 2 <= len(user_turns) <= 10
+            or not all(isinstance(turn, str) and turn.strip() for turn in user_turns)
+        ):
+            raise ValueError(
+                f"planned scenario {scenario_name} user turns must contain 2 to 10 non-empty strings"
             )
         notes = scenario.get("notes")
         if not isinstance(notes, list) or not notes or not all(isinstance(x, str) for x in notes):
@@ -159,9 +173,12 @@ def planned_runs(definition: dict[str, Any]) -> list[dict[str, Any]]:
                 raise ValueError(f"planned run {run_id} needs a non-negative temperature")
             seen_run_ids.add(run_id)
             plan.append({"run_id": run_id, "scenario": scenario_name, "options": deepcopy(options)})
+            planned_chat_calls += len(user_turns) if user_turns is not None else 1
 
     if len(plan) > 100:
         raise ValueError("a planned experiment may contain at most 100 runs")
+    if planned_chat_calls > 300:
+        raise ValueError("a planned experiment may contain at most 300 chat calls")
     return plan
 
 
@@ -316,11 +333,25 @@ def build_user_message(
     )
 
 
+def build_followup_user_message(user_request: str) -> str:
+    """Keep later conversation turns explicitly labeled as untrusted user requests."""
+    return f"<user_request>\n{user_request}\n</user_request>"
+
+
+def _response_content(response: dict[str, Any]) -> str:
+    """Return one assistant response string or fail closed on an unexpected API shape."""
+    message = response.get("message")
+    model_content = message.get("content") if isinstance(message, dict) else None
+    if not isinstance(model_content, str):
+        raise TypeError("model response must contain string message content")
+    return model_content
+
+
 def _marker_observations(
     definition: dict[str, Any],
     fixtures: dict[str, Any],
     payload: dict[str, Any],
-    response: dict[str, Any],
+    responses: list[dict[str, Any]],
     evidence: dict[str, Any],
 ) -> dict[str, Any] | None:
     marker_definition = definition.get("observation_marker")
@@ -328,10 +359,7 @@ def _marker_observations(
     if marker_definition is None and not extra_markers:
         return None
 
-    message = response.get("message")
-    model_content = message.get("content") if isinstance(message, dict) else None
-    if not isinstance(model_content, str):
-        raise TypeError("model response must contain string message content")
+    model_contents = [_response_content(response) for response in responses]
 
     observations: dict[str, Any] = {}
     if marker_definition is not None:
@@ -344,14 +372,16 @@ def _marker_observations(
             {
                 "marker_id": marker_id,
                 "canary_in_request": marker in json.dumps(payload, **json_options),
-                "canary_in_model_response": marker in model_content,
+                "canary_in_model_response": any(marker in content for content in model_contents),
                 "canary_in_fixture_evidence": marker in json.dumps(fixtures, **json_options),
                 "canary_in_full_stdout": marker in json.dumps(evidence, **json_options),
             }
         )
     observations.update(
         {
-            f"{marker['id']}_in_model_response": marker["value"] in model_content
+            f"{marker['id']}_in_model_response": any(
+                marker["value"] in content for content in model_contents
+            )
             for marker in extra_markers
         }
     )
@@ -398,18 +428,43 @@ def _run_scenario(
     )
     messages = [
         {"role": "system", "content": system_message},
-        {
-            "role": "user",
-            "content": build_user_message(notes, target, scenario_definition.get("user_request")),
-        },
     ]
-    payload = {
-        "model": definition["model"]["name"],
-        "messages": messages,
-        "stream": False,
-        "options": deepcopy(options),
-    }
-    response = ollama.request_json("/api/chat", payload)
+    declared_turns = scenario_definition.get("user_turns")
+    user_turns = (
+        declared_turns if declared_turns is not None else [scenario_definition.get("user_request")]
+    )
+    responses: list[dict[str, Any]] = []
+    conversation: list[dict[str, Any]] = []
+    payload: dict[str, Any] = {}
+    response: dict[str, Any] = {}
+    for turn_number, user_turn in enumerate(user_turns, start=1):
+        user_content = (
+            build_user_message(notes, target, user_turn)
+            if turn_number == 1
+            else build_followup_user_message(user_turn)
+        )
+        messages.append({"role": "user", "content": user_content})
+        payload = {
+            "model": definition["model"]["name"],
+            "messages": deepcopy(messages),
+            "stream": False,
+            "options": deepcopy(options),
+        }
+        response = ollama.request_json("/api/chat", payload)
+        model_content = _response_content(response)
+        responses.append(deepcopy(response))
+        conversation.append(
+            {
+                "turn": turn_number,
+                "request": deepcopy(payload),
+                "response": deepcopy(response),
+            }
+        )
+        if turn_number < len(user_turns):
+            response_message = deepcopy(response["message"])
+            response_message["role"] = "assistant"
+            response_message["content"] = model_content
+            messages.append(response_message)
     fixtures = {"notes": notes, "target": target}
     evidence = {
         "recorded_at": datetime.now(UTC).isoformat(),
@@ -429,7 +484,9 @@ def _run_scenario(
         "request": payload,
         "response": response,
     }
-    observations = _marker_observations(definition, fixtures, payload, response, evidence)
+    if len(conversation) > 1:
+        evidence["conversation"] = conversation
+    observations = _marker_observations(definition, fixtures, payload, responses, evidence)
     if observations is not None:
         evidence["observations"] = observations
     if run_id is not None:
@@ -581,6 +638,20 @@ def summarize_planned_runs(
             raise ValueError(f"planned run {run_id} scenario changed")
         if run_evidence.get("request", {}).get("options") != options:
             raise ValueError(f"planned run {run_id} options changed")
+        conversation = run_evidence.get("conversation")
+        if conversation is not None:
+            if not isinstance(conversation, list) or len(conversation) < 2:
+                raise ValueError(f"planned run {run_id} conversation is incomplete")
+            for turn_number, turn in enumerate(conversation, start=1):
+                if not isinstance(turn, dict) or turn.get("turn") != turn_number:
+                    raise ValueError(f"planned run {run_id} conversation order changed")
+                if turn.get("request", {}).get("options") != options:
+                    raise ValueError(f"planned run {run_id} conversation options changed")
+                _response_content(turn.get("response", {}))
+            if conversation[-1].get("request") != run_evidence.get("request") or conversation[
+                -1
+            ].get("response") != run_evidence.get("response"):
+                raise ValueError(f"planned run {run_id} final conversation turn changed")
     if len(set(expected_ids)) != len(expected_ids) or len(set(actual_ids)) != len(actual_ids):
         raise ValueError("planned evidence contains duplicate run ids")
 
@@ -609,7 +680,11 @@ def summarize_planned_runs(
         static_fingerprints = {
             json.dumps(
                 {
-                    "messages": item.get("request", {}).get("messages"),
+                    "messages": [
+                        message
+                        for message in item.get("request", {}).get("messages", [])
+                        if message.get("role") in {"system", "user"}
+                    ],
                     "fixtures": [
                         _fixture_fingerprint(fixture)
                         for fixture in [
@@ -625,6 +700,10 @@ def summarize_planned_runs(
         }
         if len(static_fingerprints) != 1:
             raise ValueError(f"planned scenario {scenario} changed model-visible inputs")
+
+        turn_counts = {len(item["conversation"]) if "conversation" in item else 1 for item in items}
+        if len(turn_counts) != 1:
+            raise ValueError(f"planned scenario {scenario} changed conversation length")
 
         observations = [item.get("observations") for item in items]
         if not all(isinstance(observation, dict) for observation in observations):
@@ -645,13 +724,17 @@ def summarize_planned_runs(
             }
             if actual_names != expected_names:
                 raise ValueError("planned runs contain inconsistent marker predicates")
-        scenario_summaries[scenario] = {
+        scenario_summary = {
             "runs": len(items),
             "true_counts": {
                 name: sum(bool(observation[name]) for observation in observations)
                 for name in predicate_names
             },
         }
+        turns_per_run = turn_counts.pop()
+        if turns_per_run > 1:
+            scenario_summary["turns_per_run"] = turns_per_run
+        scenario_summaries[scenario] = scenario_summary
 
     return {
         "experiment_id": runs[0].get("scenario_id"),

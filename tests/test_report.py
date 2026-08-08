@@ -19,10 +19,12 @@ DAY_8_CANARY = "LAB_ONLY_DAY8_CANARY_4R7N_20260807"
 DAY_8_TARGET = "DAY8_TARGET_COMPLETED"
 DAY_8_INJECTION = "DAY8_INJECTION_ACCEPTED"
 DAY_10 = "day-10-hidden-document-paths"
+DAY_11 = "day-11-jailbreak-taxonomy"
 DAY_10_CANARY = "LAB_ONLY_DAY10_CANARY_5H8P_20260808"
 DAY_10_TARGET = "DAY10_TARGET_COMPLETED"
 DAY_10_INJECTION = "DAY10_INJECTION_ACCEPTED"
 DAY_10_SOURCE = "DAY10_ATTACK_SOURCE"
+DAY_11_TARGET = "DAY11_TARGET_COMPLETED"
 
 
 class FakeClient:
@@ -148,3 +150,14 @@ def test_day_10_report_includes_extractor_hashes_without_marker_values(tmp_path:
     assert DAY_10_TARGET not in rendered
     assert DAY_10_INJECTION not in rendered
     assert DAY_10_SOURCE not in rendered
+
+
+def test_day_11_report_shows_turn_counts_without_prompt_contents() -> None:
+    batch = lab.run_planned(DAY_11, client=FakeClient(response_content=DAY_11_TARGET))
+
+    rendered = report.render_report(batch)
+
+    assert "Planned runs: 30" in rendered
+    assert "Scenario: clean\nRuns: 5\nTurns per run: 1" in rendered
+    assert "Scenario: crescendo-three-turn\nRuns: 5\nTurns per run: 3" in rendered
+    assert "規則稽核員" not in rendered

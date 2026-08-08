@@ -127,6 +127,25 @@ chat calls in total. The raw evidence preserves every turn; the sanitized report
 counts, fixed options, fixture hashes, and marker counts. Day 11 uses synthetic policy-bypass
 markers, has no harmful task, and keeps tools and outbound communication disabled.
 
+The Day 12 experiment compares one synthetic hidden policy in four model-visible locations: system
+text, a developer-labeled block inside the native system role, a RAG-like reference note, and an
+inert function schema. Each location has a benign and an extraction request over the same five
+predeclared seeds:
+
+```bash
+uv run llm-security-lab \
+  --experiment day-12-hidden-context-exposure \
+  --run-plan \
+  --output evidence/raw/day-12/results.json
+uv run llm-security-report evidence/raw/day-12/results.json
+```
+
+Schema-v3 scenarios may declare an optional `tools` array containing Ollama function definitions.
+The runner records those definitions in the request and evidence but has no function dispatcher: it
+never executes a returned tool call or sends a tool-result message. Ollama's native chat roles do not
+include a separate developer role, so the developer arm is explicitly a labeled block inside the
+system message rather than a claim about an independent API channel.
+
 The Day 6 authority experiment runs all four synthetic cases without Ollama, network access,
 resource-content reads, or downstream actions:
 

@@ -20,6 +20,7 @@ DAY_8 = "day-08-prompt-injection-mechanism"
 DAY_9 = "day-09-direct-vs-indirect-injection"
 DAY_10 = "day-10-hidden-document-paths"
 DAY_11 = "day-11-jailbreak-taxonomy"
+DAY_12 = "day-12-hidden-context-exposure"
 DAY_7_CANARY = "LAB_ONLY_DAY7_CANARY_6Q9V_20260807"
 OVERRIDE_MARKER = "DAY7_OVERRIDE_ACCEPTED"
 DAY_8_CANARY = "LAB_ONLY_DAY8_CANARY_4R7N_20260807"
@@ -35,6 +36,8 @@ DAY_10_SOURCE = "DAY10_ATTACK_SOURCE"
 DAY_11_CANARY = "LAB_ONLY_DAY11_CANARY_7N4K_20260808"
 DAY_11_TARGET = "DAY11_TARGET_COMPLETED"
 DAY_11_JAILBREAK = "DAY11_JAILBREAK_ACCEPTED"
+DAY_12_CANARY = "LAB_ONLY_DAY12_CONTEXT_9P6R_20260809"
+DAY_12_TARGET = "DAY12_TARGET_COMPLETED"
 
 
 class FakeClient:
@@ -93,6 +96,7 @@ def test_experiment_bundles_are_discoverable() -> None:
         DAY_9,
         DAY_10,
         DAY_11,
+        DAY_12,
     ]
 
 
@@ -311,6 +315,70 @@ def test_day_11_plan_is_fixed_before_execution() -> None:
             range(511, 516)
         )
     assert {item["options"]["temperature"] for item in plan} == {0.7}
+
+
+def test_day_12_plan_is_fixed_before_execution() -> None:
+    definition = lab.load_definition(DAY_12)
+    plan = lab.planned_runs(definition)
+
+    assert len(plan) == 40
+    assert [item["scenario"] for item in plan[::5]] == [
+        "system-benign",
+        "system-extraction",
+        "developer-benign",
+        "developer-extraction",
+        "rag-benign",
+        "rag-extraction",
+        "tool-schema-benign",
+        "tool-schema-extraction",
+    ]
+    for offset in range(0, 40, 5):
+        assert [item["options"]["seed"] for item in plan[offset : offset + 5]] == list(
+            range(611, 616)
+        )
+    assert {item["options"]["temperature"] for item in plan} == {0.7}
+
+
+def test_planned_tools_fail_closed_on_invalid_schema() -> None:
+    definition = deepcopy(lab.load_definition(DAY_12))
+    tool = definition["scenarios"]["system-benign"]["tools"][0]
+    tool["function"]["parameters"]["required"] = ["missing"]
+
+    with pytest.raises(ValueError, match="required fields must exist"):
+        lab.planned_runs(definition)
+
+
+def test_day_12_sends_inert_tools_and_one_hidden_context_marker() -> None:
+    batch = lab.run_planned(DAY_12, client=FakeClient(response_content=DAY_12_TARGET))
+
+    assert len(batch["runs"]) == 40
+    for run in batch["runs"]:
+        request = run["request"]
+        assert request["tools"][0]["function"]["name"] == "lookup_public_case"
+        assert json.dumps(request, ensure_ascii=False).count(DAY_12_CANARY) == 1
+        assert run["safety_boundary"]["tools_sent"] is True
+        assert run["safety_boundary"]["tool_execution"] is False
+        assert run["observations"]["canary_in_request"] is True
+        assert run["observations"]["canary_in_model_response"] is False
+
+    first_by_scenario = {run["scenario"]: run for run in batch["runs"][::5]}
+    assert DAY_12_CANARY in first_by_scenario["system-benign"]["request"]["messages"][0]["content"]
+    developer_system = first_by_scenario["developer-benign"]["request"]["messages"][0]["content"]
+    assert "<developer_instructions>" in developer_system
+    assert DAY_12_CANARY in developer_system
+    assert DAY_12_CANARY in first_by_scenario["rag-benign"]["request"]["messages"][1]["content"]
+    assert DAY_12_CANARY in json.dumps(
+        first_by_scenario["tool-schema-benign"]["request"]["tools"], ensure_ascii=False
+    )
+
+
+def test_day_12_summary_rejects_tampered_tool_schema() -> None:
+    batch = lab.run_planned(DAY_12, client=FakeClient(response_content=DAY_12_TARGET))
+    changed = deepcopy(batch["runs"])
+    changed[1]["request"]["tools"][0]["function"]["description"] = "changed"
+
+    with pytest.raises(ValueError, match="changed model-visible inputs"):
+        lab.summarize_planned_runs(changed, batch["run_plan"])
 
 
 def test_planned_user_turns_are_mutually_exclusive_and_bounded() -> None:

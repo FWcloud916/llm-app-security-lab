@@ -76,7 +76,8 @@ def render_report(batch: dict[str, Any]) -> str:
         f"Model: {first['model']['name']}",
         f"Digest: {summary['model_digest']}",
         "Options: " + json.dumps(first["request"]["options"], sort_keys=True),
-        "Tools sent: false",
+        f"Tools sent: {str(first['safety_boundary']['tools_sent']).lower()}",
+        "Tool execution: " + str(first["safety_boundary"].get("tool_execution", False)).lower(),
         "Output sink: stdout",
         "",
         "Fixture hashes:",
@@ -111,7 +112,8 @@ def render_planned_report(batch: dict[str, Any]) -> str:
         f"Ollama: {first['ollama_version']}",
         f"Model: {first['model']['name']}",
         f"Digest: {summary['model_digest']}",
-        "Tools sent: false",
+        f"Tools sent: {str(first['safety_boundary']['tools_sent']).lower()}",
+        "Tool execution: " + str(first["safety_boundary"].get("tool_execution", False)).lower(),
         "Output sink: stdout",
     ]
     for scenario in summary["scenario_order"]:

@@ -2,7 +2,7 @@
 
 > **Type:** Explanation
 > **Audience:** Developers, AI assistants, and any tooling that needs project context
-> **Last updated:** 2026-08-08
+> **Last updated:** 2026-08-09
 >
 > A versioned, synthetic-data lab whose independent experiment bundles support the 30-day LLM
 > application-security series.
@@ -27,6 +27,8 @@ artifacts and their verification.
 - Cloud model adapters are not enabled.
 - Tools, browser rendering, OCR, automated sinks, and external communication are intentionally absent
   from the Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, and Day 11 model bundles.
+- Day 12 sends inert synthetic function definitions but has no implementation, dispatch loop,
+  tool-result message, or external sink.
 - The model artifact is not distributed through this repository.
 
 ## 2. Tech Stack
@@ -126,9 +128,11 @@ message shape. A `user_turns` list contains 2–10 requests. Its first request c
 fixtures, later requests carry an explicit `<user_request>` label, and every API call receives the
 complete preceding user/assistant history. The raw schema-v2
 planned batch retains every request and response.
-Its reporter rejects missing, duplicated, reordered, or unplanned options before printing a
-sanitized summary. Invalid bundles, scenarios, fixtures, model digest mismatches, mixed batches, and
-Ollama failures return exit status 1. The authority runner executes the complete fixed case matrix
+Schema-v3 scenarios may also declare validated Ollama function definitions. They are preserved as
+model-visible request evidence; the runner never executes returned calls. The reporter rejects
+missing, duplicated, reordered, or unplanned options before printing a sanitized summary. Invalid
+bundles, scenarios, fixtures, model digest mismatches, mixed batches, and Ollama failures return
+exit status 1. The authority runner executes the complete fixed case matrix
 once, evaluates proposals against synthetic trusted application state and policy, and its reporter
 verifies expected decisions and event counts without printing raw model output or identity fixtures.
 
@@ -143,9 +147,10 @@ N/A — the project has no worker, queue, scheduler, daemon, or recurring task.
 | Ollama API | `src/llm_security_lab/ollama.py` | Plain HTTP to `127.0.0.1`; only `/api/*` paths accepted for Day 4/5 |
 | Day 6 authority runner | `src/llm_security_lab/authority.py` | Offline deterministic evaluator; no network or model |
 
-The Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, and Day 11 bundles call `GET /api/version`,
-`GET /api/tags`, and `POST /api/chat`. No cloud API, credential, tool schema, browser, or downstream
-action is configured.
+The Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, and Day 12 bundles call `GET /api/version`,
+`GET /api/tags`, and `POST /api/chat`. No cloud API, credential, browser, or downstream action is
+configured. Day 4–11 send no tool schema. Day 12 sends synthetic tool schemas only; no function
+implementation or downstream action exists.
 Day 7 adds an optional `response_markers` list to its schema-v2 definition; every marker produces one
 `<id>_in_model_response` boolean observation while older bundle evidence remains unchanged. Day 8
 uses schema v3 to predeclare a complete multi-scenario option sequence without CLI overrides. Day 9
@@ -159,6 +164,9 @@ request/response pair in `conversation`, retains the final request/response at t
 top-level keys, evaluates response markers across every assistant turn, and excludes variable
 assistant text when comparing fixed scenario inputs across seeds. The fixed 30-run plan contains
 40 loopback chat calls because its Crescendo proxy uses three turns per run.
+Day 12 adds backwards-compatible scenario-level inert function schemas. Evidence records whether
+schemas were sent and that tool execution remained disabled; fixed-input validation fingerprints
+the complete schema so a changed description or parameter definition invalidates the batch.
 
 ## 9. Database / Data Stores
 

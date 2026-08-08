@@ -21,6 +21,7 @@ DEFAULT_EXPERIMENT = "day-04-vulnerable-baseline"
 EXPERIMENT_ID_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 RESPONSE_MARKER_ID_PATTERN = re.compile(r"[a-z][a-z0-9_]*\Z")
 RUN_ID_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
+TOOL_NAME_PATTERN = re.compile(r"[a-z][a-z0-9_]*\Z")
 CANARY_PREDICATE_NAMES = {
     "canary_in_request",
     "canary_in_model_response",
@@ -146,6 +147,7 @@ def planned_runs(definition: dict[str, Any]) -> list[dict[str, Any]]:
         document = scenario.get("document")
         if document is not None:
             validate_document_spec(document)
+        validate_tools(scenario.get("tools"))
         runs = scenario.get("runs")
         if not isinstance(runs, list) or not runs or len(runs) > 20:
             raise ValueError(f"planned scenario {scenario_name} needs between 1 and 20 runs")
@@ -180,6 +182,49 @@ def planned_runs(definition: dict[str, Any]) -> list[dict[str, Any]]:
     if planned_chat_calls > 300:
         raise ValueError("a planned experiment may contain at most 300 chat calls")
     return plan
+
+
+def validate_tools(raw_tools: object) -> list[dict[str, Any]] | None:
+    """Validate optional Ollama function schemas without providing an execution path."""
+    if raw_tools is None:
+        return None
+    if not isinstance(raw_tools, list) or not raw_tools or len(raw_tools) > 20:
+        raise ValueError("tools must contain between 1 and 20 function definitions")
+
+    tools: list[dict[str, Any]] = []
+    seen_names: set[str] = set()
+    for raw_tool in raw_tools:
+        if not isinstance(raw_tool, dict) or raw_tool.get("type") != "function":
+            raise ValueError("every tool must be a function definition")
+        function = raw_tool.get("function")
+        if not isinstance(function, dict):
+            raise ValueError("every tool needs a function object")
+        name = function.get("name")
+        if not isinstance(name, str) or not TOOL_NAME_PATTERN.fullmatch(name):
+            raise ValueError("tool names must use lowercase snake_case")
+        if name in seen_names:
+            raise ValueError(f"duplicate tool name: {name}")
+        description = function.get("description")
+        if description is not None and (
+            not isinstance(description, str) or not description.strip()
+        ):
+            raise ValueError(f"tool {name} description must be a non-empty string")
+        parameters = function.get("parameters")
+        if not isinstance(parameters, dict) or parameters.get("type") != "object":
+            raise ValueError(f"tool {name} parameters must be an object schema")
+        properties = parameters.get("properties")
+        if not isinstance(properties, dict):
+            raise ValueError(f"tool {name} parameters need a properties object")
+        required = parameters.get("required", [])
+        if (
+            not isinstance(required, list)
+            or not all(isinstance(item, str) for item in required)
+            or not set(required).issubset(properties)
+        ):
+            raise ValueError(f"tool {name} required fields must exist in properties")
+        seen_names.add(name)
+        tools.append(deepcopy(raw_tool))
+    return tools
 
 
 def response_markers(definition: dict[str, Any]) -> list[dict[str, str]]:
@@ -437,6 +482,7 @@ def _run_scenario(
     conversation: list[dict[str, Any]] = []
     payload: dict[str, Any] = {}
     response: dict[str, Any] = {}
+    tools = validate_tools(scenario_definition.get("tools"))
     for turn_number, user_turn in enumerate(user_turns, start=1):
         user_content = (
             build_user_message(notes, target, user_turn)
@@ -450,6 +496,8 @@ def _run_scenario(
             "stream": False,
             "options": deepcopy(options),
         }
+        if tools is not None:
+            payload["tools"] = deepcopy(tools)
         response = ollama.request_json("/api/chat", payload)
         model_content = _response_content(response)
         responses.append(deepcopy(response))
@@ -475,7 +523,8 @@ def _run_scenario(
             "synthetic_data_only": True,
             "reject_symlinks_and_path_escape": True,
             "model_origin": ollama.origin,
-            "tools_sent": False,
+            "tools_sent": tools is not None,
+            "tool_execution": False,
             "output_sink": "stdout",
         },
         "ollama_version": version.get("version"),
@@ -685,6 +734,7 @@ def summarize_planned_runs(
                         for message in item.get("request", {}).get("messages", [])
                         if message.get("role") in {"system", "user"}
                     ],
+                    "tools": item.get("request", {}).get("tools"),
                     "fixtures": [
                         _fixture_fingerprint(fixture)
                         for fixture in [

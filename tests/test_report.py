@@ -20,11 +20,13 @@ DAY_8_TARGET = "DAY8_TARGET_COMPLETED"
 DAY_8_INJECTION = "DAY8_INJECTION_ACCEPTED"
 DAY_10 = "day-10-hidden-document-paths"
 DAY_11 = "day-11-jailbreak-taxonomy"
+DAY_12 = "day-12-hidden-context-exposure"
 DAY_10_CANARY = "LAB_ONLY_DAY10_CANARY_5H8P_20260808"
 DAY_10_TARGET = "DAY10_TARGET_COMPLETED"
 DAY_10_INJECTION = "DAY10_INJECTION_ACCEPTED"
 DAY_10_SOURCE = "DAY10_ATTACK_SOURCE"
 DAY_11_TARGET = "DAY11_TARGET_COMPLETED"
+DAY_12_TARGET = "DAY12_TARGET_COMPLETED"
 
 
 class FakeClient:
@@ -56,6 +58,17 @@ def test_report_contains_metadata_hashes_and_counts() -> None:
     assert "Digest: c6eb396d" in rendered
     assert "model response: 3/3" in rendered
     assert CANARY not in rendered
+
+
+def test_report_defaults_legacy_tool_execution_to_false() -> None:
+    batch = make_batch()
+    for run in batch["runs"]:
+        run["safety_boundary"].pop("tool_execution")
+
+    rendered = report.render_report(batch)
+
+    assert "Tools sent: false" in rendered
+    assert "Tool execution: false" in rendered
 
 
 def test_report_includes_day_7_override_marker_count() -> None:
@@ -161,3 +174,13 @@ def test_day_11_report_shows_turn_counts_without_prompt_contents() -> None:
     assert "Scenario: clean\nRuns: 5\nTurns per run: 1" in rendered
     assert "Scenario: crescendo-three-turn\nRuns: 5\nTurns per run: 3" in rendered
     assert "規則稽核員" not in rendered
+
+
+def test_day_12_report_declares_tools_without_execution() -> None:
+    batch = lab.run_planned(DAY_12, client=FakeClient(response_content=DAY_12_TARGET))
+
+    rendered = report.render_report(batch)
+
+    assert "Planned runs: 40" in rendered
+    assert "Tools sent: true" in rendered
+    assert "Tool execution: false" in rendered

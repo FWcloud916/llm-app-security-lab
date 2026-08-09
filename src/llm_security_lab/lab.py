@@ -28,6 +28,8 @@ CANARY_PREDICATE_NAMES = {
     "canary_in_fixture_evidence",
     "canary_in_full_stdout",
 }
+PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+MAX_IMAGE_BYTES = 10 * 1024 * 1024
 
 
 class JsonClient(Protocol):
@@ -147,6 +149,9 @@ def planned_runs(definition: dict[str, Any]) -> list[dict[str, Any]]:
         document = scenario.get("document")
         if document is not None:
             validate_document_spec(document)
+        image = scenario.get("image")
+        if image is not None and (not isinstance(image, str) or not image.strip()):
+            raise ValueError(f"planned scenario {scenario_name} image must be a non-empty path")
         validate_tools(scenario.get("tools"))
         runs = scenario.get("runs")
         if not isinstance(runs, list) or not runs or len(runs) > 20:
@@ -312,6 +317,41 @@ def read_document_fixture(raw_spec: object, experiment: str = DEFAULT_EXPERIMENT
     }
 
 
+def read_image_fixture(relative_path: str, experiment: str = DEFAULT_EXPERIMENT) -> dict[str, Any]:
+    """Read one experiment-owned PNG without performing OCR or image interpretation."""
+    if Path(relative_path).suffix.lower() != ".png":
+        raise ValueError("image fixture must use the .png suffix")
+
+    fixtures_root = experiment_root(experiment) / "fixtures"
+    path = fixtures_root / relative_path
+    try:
+        relative = path.relative_to(fixtures_root)
+    except ValueError as error:
+        raise ValueError(f"image escaped experiment bundle: {relative_path}") from error
+    current = fixtures_root
+    for part in relative.parts:
+        current /= part
+        if current.is_symlink():
+            raise ValueError(f"refusing symlink image: {relative_path}")
+
+    resolved = path.resolve(strict=True)
+    if not resolved.is_relative_to(fixtures_root) or not resolved.is_file():
+        raise ValueError(f"image escaped experiment bundle: {relative_path}")
+
+    raw = resolved.read_bytes()
+    if not raw.startswith(PNG_SIGNATURE):
+        raise ValueError("image fixture is not a PNG")
+    if not raw or len(raw) > MAX_IMAGE_BYTES:
+        raise ValueError("image fixture must contain between 1 byte and 10 MiB")
+    return {
+        "path": relative_path,
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "source_base64": b64encode(raw).decode("ascii"),
+        "media_type": "image/png",
+        "size_bytes": len(raw),
+    }
+
+
 def select_model(tags: dict[str, Any], expected: dict[str, Any]) -> dict[str, Any]:
     """Fail closed when the model tag is missing or its full digest changed."""
     model = next(
@@ -332,6 +372,23 @@ def _fixture_fingerprint(fixture: dict[str, Any]) -> dict[str, Any]:
     fingerprint = {"path": fixture.get("path"), "sha256": fixture.get("sha256")}
     source_base64 = fixture.get("source_base64")
     if source_base64 is None:
+        return fingerprint
+    media_type = fixture.get("media_type")
+    if media_type is not None:
+        size_bytes = fixture.get("size_bytes")
+        if media_type != "image/png" or not isinstance(size_bytes, int):
+            raise ValueError("image fixture evidence is incomplete")
+        try:
+            raw = b64decode(source_base64, validate=True)
+        except (Base64Error, ValueError) as error:
+            raise ValueError("image source base64 is invalid") from error
+        if not raw.startswith(PNG_SIGNATURE):
+            raise ValueError("image source is not a PNG")
+        if len(raw) != size_bytes:
+            raise ValueError("image source size does not match its bytes")
+        if hashlib.sha256(raw).hexdigest() != fixture.get("sha256"):
+            raise ValueError("image source hash does not match its bytes")
+        fingerprint.update({"media_type": media_type, "size_bytes": size_bytes})
         return fingerprint
     content = fixture.get("content")
     extracted_sha256 = fixture.get("extracted_sha256")
@@ -466,6 +523,8 @@ def _run_scenario(
     """Execute one already validated scenario with preflighted model metadata."""
     notes = [read_fixture(path, experiment) for path in scenario_definition["notes"]]
     document = scenario_definition.get("document")
+    image_path = scenario_definition.get("image")
+    image = read_image_fixture(image_path, experiment) if image_path is not None else None
     target = (
         read_document_fixture(document, experiment)
         if document is not None
@@ -489,7 +548,10 @@ def _run_scenario(
             if turn_number == 1
             else build_followup_user_message(user_turn)
         )
-        messages.append({"role": "user", "content": user_content})
+        user_message: dict[str, Any] = {"role": "user", "content": user_content}
+        if turn_number == 1 and image is not None:
+            user_message["images"] = [image["source_base64"]]
+        messages.append(user_message)
         payload = {
             "model": definition["model"]["name"],
             "messages": deepcopy(messages),
@@ -514,6 +576,8 @@ def _run_scenario(
             response_message["content"] = model_content
             messages.append(response_message)
     fixtures = {"notes": notes, "target": target}
+    if image is not None:
+        fixtures["image"] = image
     evidence = {
         "recorded_at": datetime.now(UTC).isoformat(),
         "scenario_id": definition["id"],
@@ -525,6 +589,8 @@ def _run_scenario(
             "model_origin": ollama.origin,
             "tools_sent": tools is not None,
             "tool_execution": False,
+            "images_sent": image is not None,
+            "ocr_performed": False,
             "output_sink": "stdout",
         },
         "ollama_version": version.get("version"),
@@ -591,6 +657,11 @@ def summarize_runs(runs: list[dict[str, Any]]) -> dict[str, Any]:
                     for fixture in [
                         *run.get("fixtures", {}).get("notes", []),
                         run.get("fixtures", {}).get("target", {}),
+                        *(
+                            [run.get("fixtures", {}).get("image", {})]
+                            if "image" in run.get("fixtures", {})
+                            else []
+                        ),
                     ]
                 ],
                 "safety_boundary": run.get("safety_boundary"),
@@ -730,7 +801,7 @@ def summarize_planned_runs(
             json.dumps(
                 {
                     "messages": [
-                        message
+                        {key: value for key, value in message.items() if key != "images"}
                         for message in item.get("request", {}).get("messages", [])
                         if message.get("role") in {"system", "user"}
                     ],
@@ -740,6 +811,11 @@ def summarize_planned_runs(
                         for fixture in [
                             *item.get("fixtures", {}).get("notes", []),
                             item.get("fixtures", {}).get("target", {}),
+                            *(
+                                [item.get("fixtures", {}).get("image", {})]
+                                if "image" in item.get("fixtures", {})
+                                else []
+                            ),
                         ]
                     ],
                 },

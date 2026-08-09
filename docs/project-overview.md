@@ -29,6 +29,8 @@ artifacts and their verification.
   from the Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, and Day 11 model bundles.
 - Day 12 sends inert synthetic function definitions but has no implementation, dispatch loop,
   tool-result message, or external sink.
+- Day 13 sends one experiment-owned synthetic PNG through Ollama's native vision input. The runner
+  performs no OCR, tool call, downstream action, or external communication.
 - The model artifact is not distributed through this repository.
 
 ## 2. Tech Stack
@@ -56,6 +58,7 @@ versioned experiment bundle
     │
     ├─► synthetic fixture loader ──► path and symlink checks ──► optional document extractor
     │                                                       └─► raw/extracted SHA-256 evidence
+    │                         └─► optional PNG ──► base64 + source SHA-256 evidence
     │
     └─► Ollama preflight ──► version + full model digest check
                                   │
@@ -147,10 +150,11 @@ N/A — the project has no worker, queue, scheduler, daemon, or recurring task.
 | Ollama API | `src/llm_security_lab/ollama.py` | Plain HTTP to `127.0.0.1`; only `/api/*` paths accepted for Day 4/5 |
 | Day 6 authority runner | `src/llm_security_lab/authority.py` | Offline deterministic evaluator; no network or model |
 
-The Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, and Day 12 bundles call `GET /api/version`,
+The Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, and Day 13 bundles call `GET /api/version`,
 `GET /api/tags`, and `POST /api/chat`. No cloud API, credential, browser, or downstream action is
 configured. Day 4–11 send no tool schema. Day 12 sends synthetic tool schemas only; no function
 implementation or downstream action exists.
+Day 13 sends one base64 PNG in the native `images` message field and no tools.
 Day 7 adds an optional `response_markers` list to its schema-v2 definition; every marker produces one
 `<id>_in_model_response` boolean observation while older bundle evidence remains unchanged. Day 8
 uses schema v3 to predeclare a complete multi-scenario option sequence without CLI overrides. Day 9
@@ -167,6 +171,9 @@ assistant text when comparing fixed scenario inputs across seeds. The fixed 30-r
 Day 12 adds backwards-compatible scenario-level inert function schemas. Evidence records whether
 schemas were sent and that tool execution remained disabled; fixed-input validation fingerprints
 the complete schema so a changed description or parameter definition invalidates the batch.
+Day 13 adds a backwards-compatible scenario-level PNG path. The runner attaches the base64 bytes to
+the first user message, fingerprints the source hash and size, retains the complete request only in
+raw evidence, and declares that OCR and downstream execution remained disabled.
 
 ## 9. Database / Data Stores
 

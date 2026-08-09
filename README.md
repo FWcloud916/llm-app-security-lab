@@ -140,6 +140,18 @@ uv run llm-security-lab \
 uv run llm-security-report evidence/raw/day-12/results.json
 ```
 
+The Day 13 experiment compares a clean PNG, the same payload delivered as text, visible typography
+inside a PNG, and human-readable low-contrast typography. It uses Ollama's native vision input,
+performs no OCR, exposes no tools, and keeps the only output sink on stdout.
+
+```bash
+uv run llm-security-lab \
+  --experiment day-13-multimodal-injection \
+  --run-plan \
+  --output evidence/raw/day-13/results.json
+uv run llm-security-report evidence/raw/day-13/results.json
+```
+
 Schema-v3 scenarios may declare an optional `tools` array containing Ollama function definitions.
 The runner records those definitions in the request and evidence but has no function dispatcher: it
 never executes a returned tool call or sends a tool-result message. Ollama's native chat roles do not

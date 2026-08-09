@@ -19,6 +19,7 @@ PREDICATE_LABELS = {
     "target_marker_in_model_response": "target marker in model response",
     "injection_marker_in_model_response": "injection marker in model response",
     "jailbreak_marker_in_model_response": "jailbreak marker in model response",
+    "visual_target_in_model_response": "visual target in model response",
     "injection_marker_in_source_bytes": "injection marker in source bytes",
     "injection_marker_in_extracted_document": "injection marker in extracted document",
     "injection_marker_in_request": "injection marker in request",
@@ -78,11 +79,15 @@ def render_report(batch: dict[str, Any]) -> str:
         "Options: " + json.dumps(first["request"]["options"], sort_keys=True),
         f"Tools sent: {str(first['safety_boundary']['tools_sent']).lower()}",
         "Tool execution: " + str(first["safety_boundary"].get("tool_execution", False)).lower(),
+        "Image input: " + str(first["safety_boundary"].get("images_sent", False)).lower(),
+        "OCR performed: " + str(first["safety_boundary"].get("ocr_performed", False)).lower(),
         "Output sink: stdout",
         "",
         "Fixture hashes:",
     ]
     fixtures = [*first["fixtures"]["notes"], first["fixtures"]["target"]]
+    if "image" in first["fixtures"]:
+        fixtures.append(first["fixtures"]["image"])
     lines.extend(f"  {fixture['path']}: {fixture['sha256']}" for fixture in fixtures)
     lines.extend(["", "Per-run observations:"])
     predicate_names = tuple(summary["true_counts"])
@@ -114,6 +119,8 @@ def render_planned_report(batch: dict[str, Any]) -> str:
         f"Digest: {summary['model_digest']}",
         f"Tools sent: {str(first['safety_boundary']['tools_sent']).lower()}",
         "Tool execution: " + str(first["safety_boundary"].get("tool_execution", False)).lower(),
+        "Image input: " + str(first["safety_boundary"].get("images_sent", False)).lower(),
+        "OCR performed: " + str(first["safety_boundary"].get("ocr_performed", False)).lower(),
         "Output sink: stdout",
     ]
     for scenario in summary["scenario_order"]:
@@ -130,6 +137,8 @@ def render_planned_report(batch: dict[str, Any]) -> str:
         )
         lines.append("Fixture hashes:")
         fixtures = [*scenario_first["fixtures"]["notes"], scenario_first["fixtures"]["target"]]
+        if "image" in scenario_first["fixtures"]:
+            fixtures.append(scenario_first["fixtures"]["image"])
         lines.extend(f"  {fixture['path']}: {fixture['sha256']}" for fixture in fixtures)
         target = scenario_first["fixtures"]["target"]
         if "extracted_sha256" in target:

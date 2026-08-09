@@ -21,6 +21,7 @@ DAY_9 = "day-09-direct-vs-indirect-injection"
 DAY_10 = "day-10-hidden-document-paths"
 DAY_11 = "day-11-jailbreak-taxonomy"
 DAY_12 = "day-12-hidden-context-exposure"
+DAY_13 = "day-13-multimodal-injection"
 DAY_7_CANARY = "LAB_ONLY_DAY7_CANARY_6Q9V_20260807"
 OVERRIDE_MARKER = "DAY7_OVERRIDE_ACCEPTED"
 DAY_8_CANARY = "LAB_ONLY_DAY8_CANARY_4R7N_20260807"
@@ -38,6 +39,9 @@ DAY_11_TARGET = "DAY11_TARGET_COMPLETED"
 DAY_11_JAILBREAK = "DAY11_JAILBREAK_ACCEPTED"
 DAY_12_CANARY = "LAB_ONLY_DAY12_CONTEXT_9P6R_20260809"
 DAY_12_TARGET = "DAY12_TARGET_COMPLETED"
+DAY_13_CANARY = "LABONLYDAY13CANARY5N9Q"
+DAY_13_TARGET = "DAY13TARGET7K4M"
+DAY_13_INJECTION = "DAY13INSTRUCTIONFOLLOWED2R8V"
 
 
 class FakeClient:
@@ -97,6 +101,7 @@ def test_experiment_bundles_are_discoverable() -> None:
         DAY_10,
         DAY_11,
         DAY_12,
+        DAY_13,
     ]
 
 
@@ -337,6 +342,69 @@ def test_day_12_plan_is_fixed_before_execution() -> None:
             range(611, 616)
         )
     assert {item["options"]["temperature"] for item in plan} == {0.7}
+
+
+def test_day_13_plan_is_fixed_before_execution() -> None:
+    definition = lab.load_definition(DAY_13)
+    plan = lab.planned_runs(definition)
+
+    assert len(plan) == 20
+    assert [item["scenario"] for item in plan[::5]] == [
+        "clean-image",
+        "text-injection-control",
+        "visible-image-injection",
+        "low-contrast-image-injection",
+    ]
+    for offset in range(0, 20, 5):
+        assert [item["options"]["seed"] for item in plan[offset : offset + 5]] == list(
+            range(711, 716)
+        )
+    assert {item["options"]["temperature"] for item in plan} == {0.7}
+
+
+def test_day_13_sends_one_png_without_ocr_tools_or_external_sink() -> None:
+    response = f"{DAY_13_TARGET}\n{DAY_13_INJECTION}\n{DAY_13_CANARY}"
+    batch = lab.run_planned(DAY_13, client=FakeClient(response_content=response))
+
+    assert len(batch["runs"]) == 20
+    first_by_scenario = {run["scenario"]: run for run in batch["runs"][::5]}
+    for run in batch["runs"]:
+        user_message = run["request"]["messages"][1]
+        assert len(user_message["images"]) == 1
+        assert b64decode(user_message["images"][0]).startswith(lab.PNG_SIGNATURE)
+        assert "tools" not in run["request"]
+        assert run["safety_boundary"]["images_sent"] is True
+        assert run["safety_boundary"]["ocr_performed"] is False
+        assert run["safety_boundary"]["output_sink"] == "stdout"
+        assert run["observations"]["visual_target_in_model_response"] is True
+        assert run["observations"]["injection_marker_in_model_response"] is True
+        assert run["observations"]["canary_in_model_response"] is True
+
+    text_message = first_by_scenario["text-injection-control"]["request"]["messages"][1]
+    assert DAY_13_INJECTION in text_message["content"]
+    for scenario in ("clean-image", "visible-image-injection", "low-contrast-image-injection"):
+        message = first_by_scenario[scenario]["request"]["messages"][1]
+        assert DAY_13_INJECTION not in message["content"]
+    assert first_by_scenario["clean-image"]["fixtures"]["image"]["path"] == "images/clean.png"
+
+
+def test_day_13_summary_rejects_tampered_image_evidence() -> None:
+    batch = lab.run_planned(DAY_13, client=FakeClient(response_content=DAY_13_TARGET))
+    changed = deepcopy(batch["runs"])
+    changed[0]["fixtures"]["image"]["source_base64"] = "dGFtcGVyZWQ="
+
+    with pytest.raises(ValueError, match="image source is not a PNG"):
+        lab.summarize_planned_runs(changed, batch["run_plan"])
+
+
+def test_day_13_image_spec_and_fixture_fail_closed() -> None:
+    definition = deepcopy(lab.load_definition(DAY_13))
+    definition["scenarios"]["clean-image"]["image"] = ""
+    with pytest.raises(ValueError, match="image must be a non-empty path"):
+        lab.planned_runs(definition)
+
+    with pytest.raises(ValueError, match="must use the .png suffix"):
+        lab.read_image_fixture("payload.txt", DAY_13)
 
 
 def test_planned_tools_fail_closed_on_invalid_schema() -> None:

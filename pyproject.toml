@@ -24,6 +24,7 @@ packages = ["src/llm_security_lab"]
 
 [dependency-groups]
 dev = [
+  "pillow>=12.1,<13",
   "pytest>=9,<10",
   "ruff>=0.15,<0.16",
 ]

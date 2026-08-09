@@ -13,6 +13,9 @@ This project owns versioned, synthetic-data experiments for the 30-day LLM appli
   execute returned tool calls, or add an outbound sink (source: `SECURITY.md`).
 - Day 13 MAY send experiment-owned synthetic PNG fixtures to Ollama, but MUST NOT run OCR, add
   tools, execute downstream actions, or add an outbound sink (source: `SECURITY.md`).
+- Day 14 MAY combine experiment-owned synthetic PNGs, user requests, multi-turn history, encoded
+  text, and reference notes, but MUST NOT run OCR, add tools, execute downstream actions, or add an
+  outbound sink (source: `SECURITY.md`).
 - MUST preserve the model, runtime, options, fixture hashes, full request, and observed response for every claimed result (source: `README.md`, `src/llm_security_lab/lab.py`).
 - MUST pass `uv run pytest`, `uv run ruff check .`, and `uv run ruff format --check .` before declaring code changes complete (source: `pyproject.toml`).
 
@@ -34,6 +37,7 @@ uv run llm-security-lab --experiment day-05-threat-flow-observation --scenario c
 uv run llm-security-lab --experiment day-11-jailbreak-taxonomy --run-plan
 uv run llm-security-lab --experiment day-12-hidden-context-exposure --run-plan
 uv run llm-security-lab --experiment day-13-multimodal-injection --run-plan
+uv run llm-security-lab --experiment day-14-injection-assessment --run-plan
 uv run llm-security-report evidence/raw/day-05/clean.json
 uv run llm-security-authority --experiment day-06-authority-boundary
 uv run llm-security-authority-report evidence/raw/day-06/results.json

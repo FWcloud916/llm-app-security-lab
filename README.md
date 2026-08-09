@@ -152,6 +152,20 @@ uv run llm-security-lab \
 uv run llm-security-report evidence/raw/day-13/results.json
 ```
 
+The Day 14 experiment holds one multimodal summary task, one confidential synthetic reference,
+one model digest, and five seeds constant while changing only the attack delivery or framing. Its
+ten scenarios cover clean, direct, indirect, delimiter-breaking, hypothetical, three-turn,
+Base64, many-shot, visible-image, and low-contrast-image inputs. The fixed plan contains 50 run
+units and 60 loopback chat calls because the three-turn scenario makes three calls per seed.
+
+```bash
+uv run llm-security-lab \
+  --experiment day-14-injection-assessment \
+  --run-plan \
+  --output evidence/raw/day-14/results.json
+uv run llm-security-report evidence/raw/day-14/results.json
+```
+
 Schema-v3 scenarios may declare an optional `tools` array containing Ollama function definitions.
 The runner records those definitions in the request and evidence but has no function dispatcher: it
 never executes a returned tool call or sends a tool-result message. Ollama's native chat roles do not

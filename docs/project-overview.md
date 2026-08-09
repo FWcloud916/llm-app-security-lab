@@ -150,11 +150,11 @@ N/A — the project has no worker, queue, scheduler, daemon, or recurring task.
 | Ollama API | `src/llm_security_lab/ollama.py` | Plain HTTP to `127.0.0.1`; only `/api/*` paths accepted for Day 4/5 |
 | Day 6 authority runner | `src/llm_security_lab/authority.py` | Offline deterministic evaluator; no network or model |
 
-The Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, and Day 13 bundles call `GET /api/version`,
-`GET /api/tags`, and `POST /api/chat`. No cloud API, credential, browser, or downstream action is
-configured. Day 4–11 send no tool schema. Day 12 sends synthetic tool schemas only; no function
-implementation or downstream action exists.
-Day 13 sends one base64 PNG in the native `images` message field and no tools.
+The Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, and Day 14 bundles call
+`GET /api/version`, `GET /api/tags`, and `POST /api/chat`. No cloud API, credential, browser, or
+downstream action is configured. Day 4–11 send no tool schema. Day 12 sends synthetic tool schemas
+only; no function implementation or downstream action exists. Day 13 and Day 14 send one base64
+PNG in the native `images` message field and no tools.
 Day 7 adds an optional `response_markers` list to its schema-v2 definition; every marker produces one
 `<id>_in_model_response` boolean observation while older bundle evidence remains unchanged. Day 8
 uses schema v3 to predeclare a complete multi-scenario option sequence without CLI overrides. Day 9
@@ -174,6 +174,10 @@ the complete schema so a changed description or parameter definition invalidates
 Day 13 adds a backwards-compatible scenario-level PNG path. The runner attaches the base64 bytes to
 the first user message, fingerprints the source hash and size, retains the complete request only in
 raw evidence, and declares that OCR and downstream execution remained disabled.
+Day 14 composes those existing schema-v3 capabilities without adding a new runner interface. Ten
+scenarios hold one task, one synthetic confidential reference, one model digest, and five seeds
+constant while changing direct, indirect, delimiter, hypothetical, multi-turn, encoded, many-shot,
+or image-based delivery. The fixed 50-run plan contains 60 loopback calls.
 
 ## 9. Database / Data Stores
 

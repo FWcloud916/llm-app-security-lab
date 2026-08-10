@@ -62,6 +62,9 @@ versioned experiment bundle
     │
     └─► Ollama preflight ──► version + full model digest check
                                   │
+                    optional lifecycle replay
+                    (publish + revoke + rebuild)
+                                  │
                     optional deterministic retrieval
                     (paragraph chunks + token overlap)
                                   │
@@ -82,6 +85,8 @@ versioned experiment bundle
 - Model responses remain untrusted evidence and do not trigger automatic actions.
 - Day 15 retrieval is in-memory and vectorless: it records corpus, chunk, rank, selection, and
   serialization evidence without an embedding endpoint or persistent index.
+- Day 16 lifecycle replay is in-memory and deterministic: it records source versions, revocation,
+  derived-corpus rebuilds, staleness, and corpus hashes without a database.
 
 ## 4. Directory Structure
 
@@ -90,6 +95,7 @@ versioned experiment bundle
 ├── src/llm_security_lab/
 │   ├── cli.py                 # Experiment selection, repetition or fixed plans, and raw JSON output
 │   ├── lab.py                 # Bundle, fixture, digest, request, and evidence flow
+│   ├── knowledge_base.py      # Synthetic publish/revoke/rebuild lifecycle replay
 │   ├── report.py              # Sanitized repeated-run summary
 │   ├── retrieval.py           # Deterministic paragraph chunking and sparse retrieval trace
 │   └── ollama.py              # Loopback-only JSON client
@@ -152,6 +158,13 @@ every paragraph deterministically, serializes only selected chunks, and records 
 corpus, retrieved context, request, and response. Retrieval scenarios cannot add notes, binary
 documents, images, tools, or multi-turn history.
 
+Day 16 adds a mutually exclusive scenario-level `knowledge_base` object. It declares one synthetic
+JSON event log, the final event to replay, and vectorless retrieval options. Event IDs are
+consecutive; publish events own a versioned Markdown fixture and review status; revoke events
+reference a published version; rebuild events materialize the latest non-revoked version per
+source. Evidence and the sanitized report keep active source state, corpus state, retrieval, and
+model response as separate layers.
+
 ## 7. Background Jobs & Scheduled Tasks
 
 N/A — the project has no worker, queue, scheduler, daemon, or recurring task.
@@ -163,7 +176,8 @@ N/A — the project has no worker, queue, scheduler, daemon, or recurring task.
 | Ollama API | `src/llm_security_lab/ollama.py` | Plain HTTP to `127.0.0.1`; only `/api/*` paths accepted for Day 4/5 |
 | Day 6 authority runner | `src/llm_security_lab/authority.py` | Offline deterministic evaluator; no network or model |
 
-The Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, Day 14, and Day 15 bundles call
+The Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, Day 14, Day 15, and Day 16
+bundles call
 `GET /api/version`, `GET /api/tags`, and `POST /api/chat`. No cloud API, credential, browser, or
 downstream action is configured. Day 4–11 send no tool schema. Day 12 sends synthetic tool schemas
 only; no function implementation or downstream action exists. Day 13 and Day 14 send one base64
@@ -194,10 +208,14 @@ or image-based delivery. The fixed 50-run plan contains 60 loopback calls.
 Day 15 keeps the same loopback-only chat interface while adding a vectorless retrieval trace. It
 uses no embedding API or vector store; raw evidence separates corpus membership, chunk ranking,
 selected context, serialized request, and response.
+Day 16 materializes a corpus from an experiment-owned event log before invoking that same retriever.
+It uses no database or persistent index; raw evidence separates accepted source versions, revoked
+versions, the last rebuild, corpus staleness, selected context, serialized request, and response.
 
 ## 9. Database / Data Stores
 
 N/A — the project owns no database, cache, object store, vector store, or persistent runtime state.
+Day 16 replays persistent-state semantics entirely in memory from a versioned synthetic event log.
 Git stores scenario definitions, synthetic fixtures, and sanitized evidence summaries.
 
 ## 10. Environments & Deployment

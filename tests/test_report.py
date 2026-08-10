@@ -25,6 +25,7 @@ DAY_12 = "day-12-hidden-context-exposure"
 DAY_13 = "day-13-multimodal-injection"
 DAY_14 = "day-14-injection-assessment"
 DAY_15 = "day-15-rag-attack-surface"
+DAY_16 = "day-16-data-poisoning"
 DAY_10_CANARY = "LAB_ONLY_DAY10_CANARY_5H8P_20260808"
 DAY_10_TARGET = "DAY10_TARGET_COMPLETED"
 DAY_10_INJECTION = "DAY10_INJECTION_ACCEPTED"
@@ -41,6 +42,8 @@ DAY_14_INJECTION = "DAY14_INJECTION_ACCEPTED"
 DAY_15_CANARY = "LAB_ONLY_DAY15_CANARY_6R3K_20260810"
 DAY_15_TARGET = "DAY15_TARGET_COMPLETED"
 DAY_15_INJECTION = "DAY15_RETRIEVAL_INJECTION_ACCEPTED"
+DAY_16_SAFE = "DAY16_SAFE_POLICY_30_DAYS"
+DAY_16_POISON = "DAY16_POISON_POLICY_180_DAYS"
 
 
 class FakeClient:
@@ -265,3 +268,22 @@ def test_day_15_report_shows_retrieval_trace_without_marker_values() -> None:
     assert DAY_15_CANARY not in rendered
     assert DAY_15_TARGET not in rendered
     assert DAY_15_INJECTION not in rendered
+
+
+def test_day_16_report_shows_lifecycle_without_marker_values() -> None:
+    batch = lab.run_planned(DAY_16, client=FakeClient(response_content=DAY_16_POISON))
+
+    rendered = report.render_report(batch)
+
+    assert "Planned runs: 20" in rendered
+    assert "Scenario: revoked-but-stale" in rendered
+    assert "Knowledge-base lifecycle:" in rendered
+    assert "through event: 5" in rendered
+    assert "corpus built at event: 4" in rendered
+    assert "corpus stale: true" in rendered
+    assert "refund-policy@v1" in rendered
+    assert "poisoned policy active in source state: 0/5" in rendered
+    assert "poisoned policy in corpus: 5/5" in rendered
+    assert "knowledge base stale: 5/5" in rendered
+    assert DAY_16_SAFE not in rendered
+    assert DAY_16_POISON not in rendered

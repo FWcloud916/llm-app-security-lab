@@ -28,6 +28,13 @@ PREDICATE_LABELS = {
     "attack_source_in_request": "attack source in request",
     "injection_marker_in_corpus": "injection marker in corpus",
     "injection_marker_in_retrieved_chunks": "injection marker in retrieved chunks",
+    "poisoned_policy_active_in_source_state": "poisoned policy active in source state",
+    "poisoned_policy_in_corpus": "poisoned policy in corpus",
+    "poisoned_policy_in_retrieved_chunks": "poisoned policy in retrieved chunks",
+    "poisoned_policy_in_request": "poisoned policy in request",
+    "knowledge_base_stale": "knowledge base stale",
+    "safe_policy_in_model_response": "safe policy in model response",
+    "poisoned_policy_in_model_response": "poisoned policy in model response",
 }
 
 
@@ -145,6 +152,24 @@ def render_planned_report(batch: dict[str, Any]) -> str:
                 "  extractor: "
                 + json.dumps(target["extractor"], ensure_ascii=False, sort_keys=True)
             )
+        knowledge_base = scenario_first.get("knowledge_base")
+        if knowledge_base is not None:
+            corpus = knowledge_base["corpus"]
+            lines.extend(
+                [
+                    "Knowledge-base lifecycle:",
+                    f"  through event: {knowledge_base['through_event']}",
+                    f"  corpus built at event: {corpus['built_at_event']}",
+                    f"  corpus stale: {str(corpus['stale']).lower()}",
+                    f"  corpus sha256: {corpus['sha256']}",
+                    "  active sources:",
+                ]
+            )
+            lines.extend(
+                f"    {entry['source_id']}@v{entry['version']} | "
+                f"sha256={entry['document']['sha256']}"
+                for entry in knowledge_base["active_sources"]
+            )
         retrieval = scenario_first.get("retrieval")
         if retrieval is not None:
             lines.extend(
@@ -184,6 +209,8 @@ def render_planned_report(batch: dict[str, Any]) -> str:
 def _report_fixtures(run: dict[str, Any]) -> list[dict[str, Any]]:
     """Return fixture hashes without exposing fixture contents."""
     fixtures = run["fixtures"]
+    if "event_log" in fixtures:
+        return [fixtures["event_log"], *fixtures.get("documents", [])]
     if "documents" in fixtures:
         return list(fixtures["documents"])
     if "message" in fixtures:

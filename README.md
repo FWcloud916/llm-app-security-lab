@@ -195,6 +195,19 @@ uv run llm-security-lab \
 uv run llm-security-report evidence/raw/day-15/results.json
 ```
 
+The Day 16 experiment adds a deterministic knowledge-base lifecycle before the same vectorless
+retrieval. One synthetic event log publishes an approved policy, publishes an unreviewed poisoned
+version, revokes that version, and rebuilds the derived corpus. Four fixed scenarios distinguish
+active source state from a stale materialized corpus; no database or persistent index is used.
+
+```bash
+uv run llm-security-lab \
+  --experiment day-16-data-poisoning \
+  --run-plan \
+  --output evidence/raw/day-16/results.json
+uv run llm-security-report evidence/raw/day-16/results.json
+```
+
 Schema-v3 scenarios may declare an optional `tools` array containing Ollama function definitions.
 The runner records those definitions in the request and evidence but has no function dispatcher: it
 never executes a returned tool call or sends a tool-result message. Ollama's native chat roles do not
@@ -205,6 +218,12 @@ Schema-v3 scenarios may instead declare a `retrieval` object with one fixed `use
 experiment-owned Markdown documents, `paragraph-v1` chunking, `ascii-token-overlap-v1` scoring,
 and bounded `top_k`. Retrieval is mutually exclusive with direct notes, binary documents, images,
 tools, and multi-turn history.
+
+Schema-v3 scenarios may instead declare a `knowledge_base` object with one event-log fixture,
+`through_event`, and the same bounded vectorless retrieval options. Publish events load
+experiment-owned Markdown; revoke events deactivate one version; rebuild events atomically
+materialize the latest non-revoked version of every source. The runner records active source state,
+corpus staleness, corpus hash, retrieval, request, and response separately.
 
 The Day 6 authority experiment runs all four synthetic cases without Ollama, network access,
 resource-content reads, or downstream actions:

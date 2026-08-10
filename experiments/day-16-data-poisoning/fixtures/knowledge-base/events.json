@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "events": [
+    {
+      "id": 1,
+      "type": "publish",
+      "source_id": "refund-policy",
+      "version": 1,
+      "document": "knowledge-base/refund-policy-v1.md",
+      "actor": "policy-owner",
+      "review_status": "approved"
+    },
+    {"id": 2, "type": "rebuild"},
+    {
+      "id": 3,
+      "type": "publish",
+      "source_id": "refund-policy",
+      "version": 2,
+      "document": "knowledge-base/refund-policy-v2-poisoned.md",
+      "actor": "external-editor",
+      "review_status": "unreviewed"
+    },
+    {"id": 4, "type": "rebuild"},
+    {
+      "id": 5,
+      "type": "revoke",
+      "source_id": "refund-policy",
+      "version": 2,
+      "actor": "security-reviewer"
+    },
+    {"id": 6, "type": "rebuild"}
+  ]
+}

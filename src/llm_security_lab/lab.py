@@ -13,6 +13,11 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from llm_security_lab.documents import extract_document, validate_document_spec
+from llm_security_lab.knowledge_base import (
+    knowledge_base_fingerprint,
+    replay_knowledge_base,
+    validate_knowledge_base_spec,
+)
 from llm_security_lab.ollama import OllamaClient
 from llm_security_lab.retrieval import (
     retrieval_fingerprint,
@@ -90,6 +95,9 @@ def load_definition(experiment: str = DEFAULT_EXPERIMENT) -> dict[str, Any]:
     retrieval_marker = definition.get("retrieval_observation_marker")
     if retrieval_marker is not None:
         _validate_observation_marker(retrieval_marker, "retrieval observation marker")
+    knowledge_base_marker = definition.get("knowledge_base_observation_marker")
+    if knowledge_base_marker is not None:
+        _validate_observation_marker(knowledge_base_marker, "knowledge-base observation marker")
     document_marker = definition.get("document_observation_marker")
     if document_marker is not None:
         if not isinstance(document_marker, dict):
@@ -160,6 +168,7 @@ def planned_runs(definition: dict[str, Any]) -> list[dict[str, Any]]:
             )
         if message_fixture is not None:
             incompatible = {
+                "knowledge_base",
                 "notes",
                 "retrieval",
                 "user_request",
@@ -176,8 +185,23 @@ def planned_runs(definition: dict[str, Any]) -> list[dict[str, Any]]:
                 )
         notes = scenario.get("notes")
         retrieval = scenario.get("retrieval")
+        knowledge_base = scenario.get("knowledge_base")
         if message_fixture is not None:
             pass
+        elif retrieval is not None and knowledge_base is not None:
+            raise ValueError(
+                f"planned scenario {scenario_name} cannot declare both retrieval and knowledge_base"
+            )
+        elif knowledge_base is not None:
+            if notes is not None:
+                raise ValueError(
+                    f"planned knowledge-base scenario {scenario_name} cannot declare notes"
+                )
+            if user_request is None or user_turns is not None:
+                raise ValueError(
+                    f"planned knowledge-base scenario {scenario_name} needs one user request"
+                )
+            validate_knowledge_base_spec(knowledge_base)
         elif retrieval is None:
             if (
                 not isinstance(notes, list)
@@ -196,19 +220,19 @@ def planned_runs(definition: dict[str, Any]) -> list[dict[str, Any]]:
                 )
             validate_retrieval_spec(retrieval)
         document = scenario.get("document")
-        if retrieval is not None and document is not None:
+        if (retrieval is not None or knowledge_base is not None) and document is not None:
             raise ValueError(
                 f"planned retrieval scenario {scenario_name} cannot declare a document"
             )
         if document is not None:
             validate_document_spec(document)
         image = scenario.get("image")
-        if retrieval is not None and image is not None:
+        if (retrieval is not None or knowledge_base is not None) and image is not None:
             raise ValueError(f"planned retrieval scenario {scenario_name} cannot declare an image")
         if image is not None and (not isinstance(image, str) or not image.strip()):
             raise ValueError(f"planned scenario {scenario_name} image must be a non-empty path")
         tools = validate_tools(scenario.get("tools"))
-        if retrieval is not None and tools is not None:
+        if (retrieval is not None or knowledge_base is not None) and tools is not None:
             raise ValueError(f"planned retrieval scenario {scenario_name} cannot declare tools")
         runs = scenario.get("runs")
         if not isinstance(runs, list) or not runs or len(runs) > 20:
@@ -531,6 +555,7 @@ def _marker_observations(
     responses: list[dict[str, Any]],
     evidence: dict[str, Any],
     retrieval_trace: dict[str, Any] | None = None,
+    knowledge_base_trace: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     marker_definition = definition.get("observation_marker")
     extra_markers = response_markers(definition)
@@ -582,6 +607,35 @@ def _marker_observations(
                 in json.dumps(payload, ensure_ascii=False, sort_keys=True),
             }
         )
+    knowledge_base_marker = definition.get("knowledge_base_observation_marker")
+    if knowledge_base_marker is not None:
+        if knowledge_base_trace is None or retrieval_trace is None:
+            raise ValueError("knowledge-base observation marker requires lifecycle evidence")
+        marker = _validate_observation_marker(
+            knowledge_base_marker, "knowledge-base observation marker"
+        )
+        marker_id = marker["id"]
+        marker_value = marker["value"]
+        active_sources = knowledge_base_trace.get("active_sources", [])
+        corpus_documents = knowledge_base_trace.get("corpus", {}).get("documents", [])
+        observations.update(
+            {
+                f"{marker_id}_active_in_source_state": any(
+                    marker_value in entry.get("document", {}).get("content", "")
+                    for entry in active_sources
+                ),
+                f"{marker_id}_in_corpus": any(
+                    marker_value in document.get("content", "") for document in corpus_documents
+                ),
+                f"{marker_id}_in_retrieved_chunks": any(
+                    marker_value in item.get("content", "")
+                    for item in retrieval_trace.get("selected", [])
+                ),
+                f"{marker_id}_in_request": marker_value
+                in json.dumps(payload, ensure_ascii=False, sort_keys=True),
+                "knowledge_base_stale": bool(knowledge_base_trace.get("corpus", {}).get("stale")),
+            }
+        )
     document_marker = definition.get("document_observation_marker")
     if document_marker is not None:
         target = fixtures.get("target", {})
@@ -617,11 +671,12 @@ def _run_scenario(
 ) -> dict[str, Any]:
     """Execute one already validated scenario with preflighted model metadata."""
     retrieval_spec = scenario_definition.get("retrieval")
+    knowledge_base_spec = scenario_definition.get("knowledge_base")
     message_path = scenario_definition.get("message_fixture")
     message_fixture = read_fixture(message_path, experiment) if message_path is not None else None
     notes = (
         [read_fixture(path, experiment) for path in scenario_definition["notes"]]
-        if retrieval_spec is None and message_fixture is None
+        if retrieval_spec is None and knowledge_base_spec is None and message_fixture is None
         else []
     )
     document = scenario_definition.get("document")
@@ -629,6 +684,7 @@ def _run_scenario(
     image = read_image_fixture(image_path, experiment) if image_path is not None else None
     target = None
     retrieval_trace = None
+    knowledge_base_trace = None
     documents: list[dict[str, str]] = []
     if message_fixture is not None:
         target = None
@@ -638,6 +694,22 @@ def _run_scenario(
             for path in validate_retrieval_spec(retrieval_spec)["documents"]
         ]
         retrieval_trace = retrieve(scenario_definition["user_request"], documents, retrieval_spec)
+    elif knowledge_base_spec is not None:
+        validated_knowledge_base = validate_knowledge_base_spec(knowledge_base_spec)
+        event_log = read_fixture(validated_knowledge_base["events"], experiment)
+        knowledge_base_trace = replay_knowledge_base(
+            event_log,
+            validated_knowledge_base["through_event"],
+            lambda path: read_fixture(path, experiment),
+        )
+        documents = knowledge_base_trace["corpus"]["documents"]
+        materialized_retrieval = {
+            "documents": [document["path"] for document in documents],
+            **validated_knowledge_base["retrieval"],
+        }
+        retrieval_trace = retrieve(
+            scenario_definition["user_request"], documents, materialized_retrieval
+        )
     else:
         target = (
             read_document_fixture(document, experiment)
@@ -696,6 +768,11 @@ def _run_scenario(
             messages.append(response_message)
     if message_fixture is not None:
         fixtures = {"message": message_fixture}
+    elif knowledge_base_trace is not None:
+        fixtures = {
+            "event_log": knowledge_base_trace["event_log"],
+            "documents": knowledge_base_trace["source_documents"],
+        }
     elif retrieval_trace is not None:
         fixtures = {"documents": documents}
     else:
@@ -720,6 +797,7 @@ def _run_scenario(
             "embedding_api_called": False,
             "vector_store_used": False,
             "retrieval_persistent": False,
+            "knowledge_base_lifecycle_simulated": knowledge_base_trace is not None,
             "exact_message_fixture": message_fixture is not None,
         },
         "ollama_version": version.get("version"),
@@ -730,10 +808,18 @@ def _run_scenario(
     }
     if retrieval_trace is not None:
         evidence["retrieval"] = retrieval_trace
+    if knowledge_base_trace is not None:
+        evidence["knowledge_base"] = knowledge_base_trace
     if len(conversation) > 1:
         evidence["conversation"] = conversation
     observations = _marker_observations(
-        definition, fixtures, payload, responses, evidence, retrieval_trace
+        definition,
+        fixtures,
+        payload,
+        responses,
+        evidence,
+        retrieval_trace,
+        knowledge_base_trace,
     )
     if observations is not None:
         evidence["observations"] = observations
@@ -932,6 +1018,11 @@ def summarize_planned_runs(
                     "retrieval": (
                         retrieval_fingerprint(item["retrieval"]) if "retrieval" in item else None
                     ),
+                    "knowledge_base": (
+                        knowledge_base_fingerprint(item["knowledge_base"])
+                        if "knowledge_base" in item
+                        else None
+                    ),
                 },
                 ensure_ascii=False,
                 sort_keys=True,
@@ -988,6 +1079,8 @@ def summarize_planned_runs(
 def _run_fixtures(run: dict[str, Any]) -> list[dict[str, Any]]:
     """Return every experiment fixture in stable evidence order."""
     fixtures = run.get("fixtures", {})
+    if "event_log" in fixtures:
+        return [fixtures["event_log"], *fixtures.get("documents", [])]
     if "documents" in fixtures:
         return list(fixtures.get("documents", []))
     if "message" in fixtures:

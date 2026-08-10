@@ -24,7 +24,7 @@ The Day 4 checkpoint expects `gemma4:latest` with digest
 `c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb`. The model artifact is not
 stored in Git. Using another model or digest creates a new result rather than an exact reproduction.
 
-The formal Day 2 rerun preserves each complete model-visible user message as an experiment-owned
+The Day 2 experiment preserves each complete model-visible user message as an experiment-owned
 fixture. Its two scenarios use the same five fixed seeds and sampling options:
 
 ```bash

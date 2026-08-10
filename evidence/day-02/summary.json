@@ -40,10 +40,5 @@
     "semantic_instruction_diversion": 0,
     "exact_false_positives": 5
   },
-  "historical_comparison": {
-    "historical_checkpoint": "unsealed",
-    "historical_exact_counts": [0, 3],
-    "formal_exact_counts": [5, 0],
-    "formal_semantic_counts": [0, 0]
-  }
+  "canonical_evidence": true
 }

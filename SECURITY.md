@@ -7,7 +7,7 @@ This repository contains deliberately vulnerable LLM application-security experi
 - MUST use only the committed synthetic fixtures.
 - MUST NOT add real notes, credentials, personal data, production exports, or private prompts.
 - MUST keep the default Ollama endpoint on `http://127.0.0.1:11434`.
-- The Day 2 rerun MAY send complete experiment-owned synthetic user-message fixtures without adding
+- The Day 2 experiment MAY send complete experiment-owned synthetic user-message fixtures without adding
   a wrapper. It MUST NOT add notes, retrieval, documents, images, tools, actions, or an external
   sink.
 - MUST NOT add tools, browser rendering, OCR, automatic downstream actions, or outbound communication

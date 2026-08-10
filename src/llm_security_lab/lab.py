@@ -151,9 +151,34 @@ def planned_runs(definition: dict[str, Any]) -> list[dict[str, Any]]:
             raise ValueError(
                 f"planned scenario {scenario_name} user turns must contain 2 to 10 non-empty strings"
             )
+        message_fixture = scenario.get("message_fixture")
+        if message_fixture is not None and (
+            not isinstance(message_fixture, str) or not message_fixture.strip()
+        ):
+            raise ValueError(
+                f"planned scenario {scenario_name} message fixture must be a non-empty path"
+            )
+        if message_fixture is not None:
+            incompatible = {
+                "notes",
+                "retrieval",
+                "user_request",
+                "user_turns",
+                "document",
+                "image",
+                "tools",
+            }.intersection(scenario)
+            if incompatible:
+                fields = ", ".join(sorted(incompatible))
+                raise ValueError(
+                    f"planned scenario {scenario_name} message fixture cannot be combined with: "
+                    f"{fields}"
+                )
         notes = scenario.get("notes")
         retrieval = scenario.get("retrieval")
-        if retrieval is None:
+        if message_fixture is not None:
+            pass
+        elif retrieval is None:
             if (
                 not isinstance(notes, list)
                 or not notes
@@ -592,9 +617,11 @@ def _run_scenario(
 ) -> dict[str, Any]:
     """Execute one already validated scenario with preflighted model metadata."""
     retrieval_spec = scenario_definition.get("retrieval")
+    message_path = scenario_definition.get("message_fixture")
+    message_fixture = read_fixture(message_path, experiment) if message_path is not None else None
     notes = (
         [read_fixture(path, experiment) for path in scenario_definition["notes"]]
-        if retrieval_spec is None
+        if retrieval_spec is None and message_fixture is None
         else []
     )
     document = scenario_definition.get("document")
@@ -603,7 +630,9 @@ def _run_scenario(
     target = None
     retrieval_trace = None
     documents: list[dict[str, str]] = []
-    if retrieval_spec is not None:
+    if message_fixture is not None:
+        target = None
+    elif retrieval_spec is not None:
         documents = [
             read_fixture(path, experiment)
             for path in validate_retrieval_spec(retrieval_spec)["documents"]
@@ -628,7 +657,9 @@ def _run_scenario(
     response: dict[str, Any] = {}
     tools = validate_tools(scenario_definition.get("tools"))
     for turn_number, user_turn in enumerate(user_turns, start=1):
-        if turn_number == 1 and retrieval_trace is not None:
+        if turn_number == 1 and message_fixture is not None:
+            user_content = message_fixture["content"]
+        elif turn_number == 1 and retrieval_trace is not None:
             user_content = build_retrieval_user_message(
                 user_turn, retrieval_trace["serialized_context"]
             )
@@ -663,11 +694,12 @@ def _run_scenario(
             response_message["role"] = "assistant"
             response_message["content"] = model_content
             messages.append(response_message)
-    fixtures = (
-        {"documents": documents}
-        if retrieval_trace is not None
-        else {"notes": notes, "target": target}
-    )
+    if message_fixture is not None:
+        fixtures = {"message": message_fixture}
+    elif retrieval_trace is not None:
+        fixtures = {"documents": documents}
+    else:
+        fixtures = {"notes": notes, "target": target}
     if image is not None:
         fixtures["image"] = image
     evidence = {
@@ -688,6 +720,7 @@ def _run_scenario(
             "embedding_api_called": False,
             "vector_store_used": False,
             "retrieval_persistent": False,
+            "exact_message_fixture": message_fixture is not None,
         },
         "ollama_version": version.get("version"),
         "model": model,
@@ -957,6 +990,8 @@ def _run_fixtures(run: dict[str, Any]) -> list[dict[str, Any]]:
     fixtures = run.get("fixtures", {})
     if "documents" in fixtures:
         return list(fixtures.get("documents", []))
+    if "message" in fixtures:
+        return [fixtures["message"]]
     result = [*fixtures.get("notes", []), fixtures.get("target", {})]
     if "image" in fixtures:
         result.append(fixtures["image"])

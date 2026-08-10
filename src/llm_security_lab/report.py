@@ -186,6 +186,8 @@ def _report_fixtures(run: dict[str, Any]) -> list[dict[str, Any]]:
     fixtures = run["fixtures"]
     if "documents" in fixtures:
         return list(fixtures["documents"])
+    if "message" in fixtures:
+        return [fixtures["message"]]
     result = [*fixtures["notes"], fixtures["target"]]
     if "image" in fixtures:
         result.append(fixtures["image"])

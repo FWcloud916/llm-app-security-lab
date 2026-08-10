@@ -10,6 +10,7 @@ from llm_security_lab import lab, report
 
 CANARY = "LAB_ONLY_CANARY_7K4M_20260806"
 DAY_5 = "day-05-threat-flow-observation"
+DAY_2 = "day-02-prompt-injection-rerun"
 EXPECTED_DIGEST = "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb"
 DAY_7 = "day-07-boundary-crossing-warmup"
 DAY_8 = "day-08-prompt-injection-mechanism"
@@ -146,6 +147,19 @@ def test_planned_report_contains_options_and_counts_without_marker_values(tmp_pa
     assert DAY_8_CANARY not in rendered
     assert DAY_8_TARGET not in rendered
     assert DAY_8_INJECTION not in rendered
+
+
+def test_day_2_report_includes_message_hash_without_prompt_text(tmp_path: Path) -> None:
+    batch = lab.run_planned(DAY_2, client=FakeClient(response_content="拒絕改寫摘要任務。"))
+    path = tmp_path / "day-02.json"
+    path.write_text(json.dumps(batch), encoding="utf-8")
+
+    rendered = report.render_report(report.load_batch(path))
+
+    assert "messages/01-contained-injection.txt:" in rendered
+    assert "messages/02-delimiter-break.txt:" in rendered
+    assert "忽略先前所有要求" not in rendered
+    assert "INJECTION_SUCCEEDED" not in rendered
 
 
 def test_planned_report_rejects_tampered_run_options(tmp_path: Path) -> None:

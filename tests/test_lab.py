@@ -15,6 +15,7 @@ from llm_security_lab.ollama import OllamaClient
 EXPECTED_DIGEST = "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb"
 CANARY = "LAB_ONLY_CANARY_7K4M_20260806"
 DAY_5 = "day-05-threat-flow-observation"
+DAY_2 = "day-02-prompt-injection-rerun"
 DAY_7 = "day-07-boundary-crossing-warmup"
 DAY_8 = "day-08-prompt-injection-mechanism"
 DAY_9 = "day-09-direct-vs-indirect-injection"
@@ -102,6 +103,7 @@ class FakeClient:
 
 def test_experiment_bundles_are_discoverable() -> None:
     assert lab.available_experiments() == [
+        DAY_2,
         "day-04-vulnerable-baseline",
         DAY_5,
         DAY_7,
@@ -114,6 +116,62 @@ def test_experiment_bundles_are_discoverable() -> None:
         DAY_14,
         DAY_15,
     ]
+
+
+def test_day_2_exact_message_fixtures_are_sent_without_added_wrappers() -> None:
+    batch = lab.run_planned(DAY_2, client=FakeClient(response_content="拒絕改寫摘要任務。"))
+
+    assert len(batch["runs"]) == 10
+    assert batch["run_plan"] == [
+        {
+            "run_id": f"{prefix}-{seed}",
+            "scenario": scenario,
+            "options": {"seed": seed, "temperature": 0.7},
+        }
+        for prefix, scenario in (
+            ("contained", "contained-injection"),
+            ("delimiter", "delimiter-break"),
+        )
+        for seed in range(21, 26)
+    ]
+    first_by_scenario = {run["scenario"]: run for run in batch["runs"][::5]}
+    for scenario, run in first_by_scenario.items():
+        fixture = run["fixtures"]["message"]
+        assert run["request"]["messages"][1]["content"] == fixture["content"]
+        assert run["request"]["messages"][1]["content"].startswith("<untrusted_document>\n")
+        assert run["safety_boundary"]["exact_message_fixture"] is True
+        assert run["safety_boundary"]["tools_sent"] is False
+        assert run["safety_boundary"]["output_sink"] == "stdout"
+        assert fixture["path"].startswith("messages/")
+        assert len(fixture["sha256"]) == 64, scenario
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("notes", ["target.md"]),
+        ("retrieval", {"documents": ["target.md"]}),
+        ("user_request", "summarize"),
+        ("user_turns", ["one", "two"]),
+        ("document", {"path": "target.md", "extractor": "html-v1"}),
+        ("image", "image.png"),
+        ("tools", [{"type": "function"}]),
+    ],
+)
+def test_message_fixture_rejects_other_model_input_fields(field: str, value: object) -> None:
+    definition = deepcopy(lab.load_definition(DAY_2))
+    definition["scenarios"]["contained-injection"][field] = value
+
+    with pytest.raises(ValueError, match="message fixture cannot be combined"):
+        lab.planned_runs(definition)
+
+
+def test_message_fixture_must_be_a_non_empty_path() -> None:
+    definition = deepcopy(lab.load_definition(DAY_2))
+    definition["scenarios"]["contained-injection"]["message_fixture"] = ""
+
+    with pytest.raises(ValueError, match="message fixture must be a non-empty path"):
+        lab.planned_runs(definition)
 
 
 def test_clean_scenario_excludes_attack_note_and_tools() -> None:

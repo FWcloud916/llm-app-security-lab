@@ -26,6 +26,8 @@ PREDICATE_LABELS = {
     "attack_source_in_source_bytes": "attack source in source bytes",
     "attack_source_in_extracted_document": "attack source in extracted document",
     "attack_source_in_request": "attack source in request",
+    "injection_marker_in_corpus": "injection marker in corpus",
+    "injection_marker_in_retrieved_chunks": "injection marker in retrieved chunks",
 }
 
 
@@ -85,9 +87,7 @@ def render_report(batch: dict[str, Any]) -> str:
         "",
         "Fixture hashes:",
     ]
-    fixtures = [*first["fixtures"]["notes"], first["fixtures"]["target"]]
-    if "image" in first["fixtures"]:
-        fixtures.append(first["fixtures"]["image"])
+    fixtures = _report_fixtures(first)
     lines.extend(f"  {fixture['path']}: {fixture['sha256']}" for fixture in fixtures)
     lines.extend(["", "Per-run observations:"])
     predicate_names = tuple(summary["true_counts"])
@@ -136,16 +136,31 @@ def render_planned_report(batch: dict[str, Any]) -> str:
             ]
         )
         lines.append("Fixture hashes:")
-        fixtures = [*scenario_first["fixtures"]["notes"], scenario_first["fixtures"]["target"]]
-        if "image" in scenario_first["fixtures"]:
-            fixtures.append(scenario_first["fixtures"]["image"])
+        fixtures = _report_fixtures(scenario_first)
         lines.extend(f"  {fixture['path']}: {fixture['sha256']}" for fixture in fixtures)
-        target = scenario_first["fixtures"]["target"]
+        target = scenario_first["fixtures"].get("target", {})
         if "extracted_sha256" in target:
             lines.append(f"  extracted text: {target['extracted_sha256']}")
             lines.append(
                 "  extractor: "
                 + json.dumps(target["extractor"], ensure_ascii=False, sort_keys=True)
+            )
+        retrieval = scenario_first.get("retrieval")
+        if retrieval is not None:
+            lines.extend(
+                [
+                    "Retrieval:",
+                    f"  chunking: {retrieval['chunking']}",
+                    f"  strategy: {retrieval['strategy']}",
+                    f"  top_k: {retrieval['top_k']}",
+                    f"  serialized context: {retrieval['serialized_sha256']}",
+                    "  selected chunks:",
+                ]
+            )
+            lines.extend(
+                f"    {item['rank']}. {item['id']} | score={item['score']} | "
+                f"sha256={item['sha256']}"
+                for item in retrieval["selected"]
             )
         lines.append("Per-run observations:")
         predicate_names = tuple(scenario_summary["true_counts"])
@@ -164,6 +179,17 @@ def render_planned_report(batch: dict[str, Any]) -> str:
             for name in predicate_names
         )
     return "\n".join(lines)
+
+
+def _report_fixtures(run: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return fixture hashes without exposing fixture contents."""
+    fixtures = run["fixtures"]
+    if "documents" in fixtures:
+        return list(fixtures["documents"])
+    result = [*fixtures["notes"], fixtures["target"]]
+    if "image" in fixtures:
+        result.append(fixtures["image"])
+    return result
 
 
 def build_parser() -> argparse.ArgumentParser:

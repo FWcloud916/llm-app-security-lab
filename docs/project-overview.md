@@ -2,7 +2,7 @@
 
 > **Type:** Explanation
 > **Audience:** Developers, AI assistants, and any tooling that needs project context
-> **Last updated:** 2026-08-09
+> **Last updated:** 2026-08-10
 >
 > A versioned, synthetic-data lab whose independent experiment bundles support the 30-day LLM
 > application-security series.
@@ -62,6 +62,9 @@ versioned experiment bundle
     │
     └─► Ollama preflight ──► version + full model digest check
                                   │
+                    optional deterministic retrieval
+                    (paragraph chunks + token overlap)
+                                  │
                                   ▼
                             POST /api/chat
                                   │
@@ -77,6 +80,8 @@ versioned experiment bundle
 - The Ollama client MUST reject non-loopback origins.
 - A model tag is not identity; the full digest is checked before inference.
 - Model responses remain untrusted evidence and do not trigger automatic actions.
+- Day 15 retrieval is in-memory and vectorless: it records corpus, chunk, rank, selection, and
+  serialization evidence without an embedding endpoint or persistent index.
 
 ## 4. Directory Structure
 
@@ -86,6 +91,7 @@ versioned experiment bundle
 │   ├── cli.py                 # Experiment selection, repetition or fixed plans, and raw JSON output
 │   ├── lab.py                 # Bundle, fixture, digest, request, and evidence flow
 │   ├── report.py              # Sanitized repeated-run summary
+│   ├── retrieval.py           # Deterministic paragraph chunking and sparse retrieval trace
 │   └── ollama.py              # Loopback-only JSON client
 ├── experiments/
 │   └── <experiment-id>/       # Definition plus experiment-owned synthetic fixtures
@@ -100,8 +106,8 @@ versioned experiment bundle
 
 ### Core Entity Relationships
 
-N/A — the project has no database entities. An experiment definition selects a model configuration,
-one target fixture, and an ordered list of note fixtures; one run produces an evidence document.
+N/A — the project has no database entities. An experiment definition selects a model configuration
+and either direct fixtures or an in-memory retrieval corpus; one run produces an evidence document.
 
 ### Model Details
 
@@ -139,6 +145,13 @@ exit status 1. The authority runner executes the complete fixed case matrix
 once, evaluates proposals against synthetic trusted application state and policy, and its reporter
 verifies expected decisions and event counts without printing raw model output or identity fixtures.
 
+Day 15 adds a mutually exclusive scenario-level `retrieval` object. A retrieval scenario declares
+one `user_request`, 1–20 synthetic Markdown documents, `paragraph-v1` chunking,
+`ascii-token-overlap-v1` scoring, and a bounded `top_k`. The runner fingerprints the corpus, ranks
+every paragraph deterministically, serializes only selected chunks, and records stage markers for
+corpus, retrieved context, request, and response. Retrieval scenarios cannot add notes, binary
+documents, images, tools, or multi-turn history.
+
 ## 7. Background Jobs & Scheduled Tasks
 
 N/A — the project has no worker, queue, scheduler, daemon, or recurring task.
@@ -150,7 +163,7 @@ N/A — the project has no worker, queue, scheduler, daemon, or recurring task.
 | Ollama API | `src/llm_security_lab/ollama.py` | Plain HTTP to `127.0.0.1`; only `/api/*` paths accepted for Day 4/5 |
 | Day 6 authority runner | `src/llm_security_lab/authority.py` | Offline deterministic evaluator; no network or model |
 
-The Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, and Day 14 bundles call
+The Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, Day 14, and Day 15 bundles call
 `GET /api/version`, `GET /api/tags`, and `POST /api/chat`. No cloud API, credential, browser, or
 downstream action is configured. Day 4–11 send no tool schema. Day 12 sends synthetic tool schemas
 only; no function implementation or downstream action exists. Day 13 and Day 14 send one base64
@@ -178,6 +191,9 @@ Day 14 composes those existing schema-v3 capabilities without adding a new runne
 scenarios hold one task, one synthetic confidential reference, one model digest, and five seeds
 constant while changing direct, indirect, delimiter, hypothetical, multi-turn, encoded, many-shot,
 or image-based delivery. The fixed 50-run plan contains 60 loopback calls.
+Day 15 keeps the same loopback-only chat interface while adding a vectorless retrieval trace. It
+uses no embedding API or vector store; raw evidence separates corpus membership, chunk ranking,
+selected context, serialized request, and response.
 
 ## 9. Database / Data Stores
 

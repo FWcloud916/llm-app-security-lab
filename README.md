@@ -166,11 +166,29 @@ uv run llm-security-lab \
 uv run llm-security-report evidence/raw/day-14/results.json
 ```
 
+The Day 15 experiment adds a deterministic, in-memory RAG trace. It compares a clean corpus, the
+same injection indexed but excluded by `top_k=1`, and the injection selected by `top_k=2`. The
+retriever uses paragraph chunks and ASCII token overlap so corpus, rank, selected context, request,
+and response remain independently auditable. It does not call an embedding API or vector store.
+
+```bash
+uv run llm-security-lab \
+  --experiment day-15-rag-attack-surface \
+  --run-plan \
+  --output evidence/raw/day-15/results.json
+uv run llm-security-report evidence/raw/day-15/results.json
+```
+
 Schema-v3 scenarios may declare an optional `tools` array containing Ollama function definitions.
 The runner records those definitions in the request and evidence but has no function dispatcher: it
 never executes a returned tool call or sends a tool-result message. Ollama's native chat roles do not
 include a separate developer role, so the developer arm is explicitly a labeled block inside the
 system message rather than a claim about an independent API channel.
+
+Schema-v3 scenarios may instead declare a `retrieval` object with one fixed `user_request`,
+experiment-owned Markdown documents, `paragraph-v1` chunking, `ascii-token-overlap-v1` scoring,
+and bounded `top_k`. Retrieval is mutually exclusive with direct notes, binary documents, images,
+tools, and multi-turn history.
 
 The Day 6 authority experiment runs all four synthetic cases without Ollama, network access,
 resource-content reads, or downstream actions:

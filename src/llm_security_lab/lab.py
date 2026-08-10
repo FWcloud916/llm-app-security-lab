@@ -14,6 +14,11 @@ from typing import Any, Protocol
 
 from llm_security_lab.documents import extract_document, validate_document_spec
 from llm_security_lab.ollama import OllamaClient
+from llm_security_lab.retrieval import (
+    retrieval_fingerprint,
+    retrieve,
+    validate_retrieval_spec,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 EXPERIMENTS_ROOT = PROJECT_ROOT / "experiments"
@@ -82,6 +87,9 @@ def load_definition(experiment: str = DEFAULT_EXPERIMENT) -> dict[str, Any]:
     if definition.get("id") != experiment:
         raise ValueError("experiment id does not match its bundle directory")
     markers = response_markers(definition)
+    retrieval_marker = definition.get("retrieval_observation_marker")
+    if retrieval_marker is not None:
+        _validate_observation_marker(retrieval_marker, "retrieval observation marker")
     document_marker = definition.get("document_observation_marker")
     if document_marker is not None:
         if not isinstance(document_marker, dict):
@@ -144,15 +152,39 @@ def planned_runs(definition: dict[str, Any]) -> list[dict[str, Any]]:
                 f"planned scenario {scenario_name} user turns must contain 2 to 10 non-empty strings"
             )
         notes = scenario.get("notes")
-        if not isinstance(notes, list) or not notes or not all(isinstance(x, str) for x in notes):
-            raise ValueError(f"planned scenario {scenario_name} needs fixture note paths")
+        retrieval = scenario.get("retrieval")
+        if retrieval is None:
+            if (
+                not isinstance(notes, list)
+                or not notes
+                or not all(isinstance(x, str) for x in notes)
+            ):
+                raise ValueError(f"planned scenario {scenario_name} needs fixture note paths")
+        else:
+            if notes is not None:
+                raise ValueError(
+                    f"planned scenario {scenario_name} cannot declare both notes and retrieval"
+                )
+            if user_request is None or user_turns is not None:
+                raise ValueError(
+                    f"planned retrieval scenario {scenario_name} needs one user request"
+                )
+            validate_retrieval_spec(retrieval)
         document = scenario.get("document")
+        if retrieval is not None and document is not None:
+            raise ValueError(
+                f"planned retrieval scenario {scenario_name} cannot declare a document"
+            )
         if document is not None:
             validate_document_spec(document)
         image = scenario.get("image")
+        if retrieval is not None and image is not None:
+            raise ValueError(f"planned retrieval scenario {scenario_name} cannot declare an image")
         if image is not None and (not isinstance(image, str) or not image.strip()):
             raise ValueError(f"planned scenario {scenario_name} image must be a non-empty path")
-        validate_tools(scenario.get("tools"))
+        tools = validate_tools(scenario.get("tools"))
+        if retrieval is not None and tools is not None:
+            raise ValueError(f"planned retrieval scenario {scenario_name} cannot declare tools")
         runs = scenario.get("runs")
         if not isinstance(runs, list) or not runs or len(runs) > 20:
             raise ValueError(f"planned scenario {scenario_name} needs between 1 and 20 runs")
@@ -257,6 +289,19 @@ def response_markers(definition: dict[str, Any]) -> list[dict[str, str]]:
         seen_ids.add(marker_id)
         markers.append({"id": marker_id, "value": value})
     return markers
+
+
+def _validate_observation_marker(raw_marker: object, label: str) -> dict[str, str]:
+    """Validate one marker used outside the response-only marker list."""
+    if not isinstance(raw_marker, dict):
+        raise ValueError(f"{label} must be an object")
+    marker_id = raw_marker.get("id")
+    value = raw_marker.get("value")
+    if not isinstance(marker_id, str) or not RESPONSE_MARKER_ID_PATTERN.fullmatch(marker_id):
+        raise ValueError(f"{label} id must use lowercase snake_case")
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{label} must contain a non-empty value")
+    return {"id": marker_id, "value": value}
 
 
 def read_fixture(relative_path: str, experiment: str = DEFAULT_EXPERIMENT) -> dict[str, str]:
@@ -440,6 +485,11 @@ def build_followup_user_message(user_request: str) -> str:
     return f"<user_request>\n{user_request}\n</user_request>"
 
 
+def build_retrieval_user_message(user_request: str, serialized_context: str) -> str:
+    """Serialize one query and only the chunks selected by the deterministic retriever."""
+    return f"<user_request>\n{user_request}\n</user_request>\n{serialized_context}"
+
+
 def _response_content(response: dict[str, Any]) -> str:
     """Return one assistant response string or fail closed on an unexpected API shape."""
     message = response.get("message")
@@ -455,6 +505,7 @@ def _marker_observations(
     payload: dict[str, Any],
     responses: list[dict[str, Any]],
     evidence: dict[str, Any],
+    retrieval_trace: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     marker_definition = definition.get("observation_marker")
     extra_markers = response_markers(definition)
@@ -487,6 +538,25 @@ def _marker_observations(
             for marker in extra_markers
         }
     )
+    retrieval_marker = definition.get("retrieval_observation_marker")
+    if retrieval_marker is not None:
+        if retrieval_trace is None:
+            raise ValueError("retrieval observation marker requires retrieval evidence")
+        marker = _validate_observation_marker(retrieval_marker, "retrieval observation marker")
+        marker_id = marker["id"]
+        marker_value = marker["value"]
+        observations.update(
+            {
+                f"{marker_id}_in_corpus": marker_value
+                in json.dumps(fixtures.get("documents", []), ensure_ascii=False, sort_keys=True),
+                f"{marker_id}_in_retrieved_chunks": any(
+                    marker_value in item.get("content", "")
+                    for item in retrieval_trace.get("selected", [])
+                ),
+                f"{marker_id}_in_request": marker_value
+                in json.dumps(payload, ensure_ascii=False, sort_keys=True),
+            }
+        )
     document_marker = definition.get("document_observation_marker")
     if document_marker is not None:
         target = fixtures.get("target", {})
@@ -521,15 +591,30 @@ def _run_scenario(
     run_id: str | None = None,
 ) -> dict[str, Any]:
     """Execute one already validated scenario with preflighted model metadata."""
-    notes = [read_fixture(path, experiment) for path in scenario_definition["notes"]]
+    retrieval_spec = scenario_definition.get("retrieval")
+    notes = (
+        [read_fixture(path, experiment) for path in scenario_definition["notes"]]
+        if retrieval_spec is None
+        else []
+    )
     document = scenario_definition.get("document")
     image_path = scenario_definition.get("image")
     image = read_image_fixture(image_path, experiment) if image_path is not None else None
-    target = (
-        read_document_fixture(document, experiment)
-        if document is not None
-        else read_fixture(definition["target"], experiment)
-    )
+    target = None
+    retrieval_trace = None
+    documents: list[dict[str, str]] = []
+    if retrieval_spec is not None:
+        documents = [
+            read_fixture(path, experiment)
+            for path in validate_retrieval_spec(retrieval_spec)["documents"]
+        ]
+        retrieval_trace = retrieve(scenario_definition["user_request"], documents, retrieval_spec)
+    else:
+        target = (
+            read_document_fixture(document, experiment)
+            if document is not None
+            else read_fixture(definition["target"], experiment)
+        )
     messages = [
         {"role": "system", "content": system_message},
     ]
@@ -543,11 +628,14 @@ def _run_scenario(
     response: dict[str, Any] = {}
     tools = validate_tools(scenario_definition.get("tools"))
     for turn_number, user_turn in enumerate(user_turns, start=1):
-        user_content = (
-            build_user_message(notes, target, user_turn)
-            if turn_number == 1
-            else build_followup_user_message(user_turn)
-        )
+        if turn_number == 1 and retrieval_trace is not None:
+            user_content = build_retrieval_user_message(
+                user_turn, retrieval_trace["serialized_context"]
+            )
+        elif turn_number == 1:
+            user_content = build_user_message(notes, target, user_turn)
+        else:
+            user_content = build_followup_user_message(user_turn)
         user_message: dict[str, Any] = {"role": "user", "content": user_content}
         if turn_number == 1 and image is not None:
             user_message["images"] = [image["source_base64"]]
@@ -575,7 +663,11 @@ def _run_scenario(
             response_message["role"] = "assistant"
             response_message["content"] = model_content
             messages.append(response_message)
-    fixtures = {"notes": notes, "target": target}
+    fixtures = (
+        {"documents": documents}
+        if retrieval_trace is not None
+        else {"notes": notes, "target": target}
+    )
     if image is not None:
         fixtures["image"] = image
     evidence = {
@@ -592,6 +684,10 @@ def _run_scenario(
             "images_sent": image is not None,
             "ocr_performed": False,
             "output_sink": "stdout",
+            "retrieval_performed": retrieval_trace is not None,
+            "embedding_api_called": False,
+            "vector_store_used": False,
+            "retrieval_persistent": False,
         },
         "ollama_version": version.get("version"),
         "model": model,
@@ -599,9 +695,13 @@ def _run_scenario(
         "request": payload,
         "response": response,
     }
+    if retrieval_trace is not None:
+        evidence["retrieval"] = retrieval_trace
     if len(conversation) > 1:
         evidence["conversation"] = conversation
-    observations = _marker_observations(definition, fixtures, payload, responses, evidence)
+    observations = _marker_observations(
+        definition, fixtures, payload, responses, evidence, retrieval_trace
+    )
     if observations is not None:
         evidence["observations"] = observations
     if run_id is not None:
@@ -652,18 +752,7 @@ def summarize_runs(runs: list[dict[str, Any]]) -> dict[str, Any]:
                 "ollama_version": run.get("ollama_version"),
                 "model": run.get("model"),
                 "options": run.get("request", {}).get("options"),
-                "fixtures": [
-                    _fixture_fingerprint(fixture)
-                    for fixture in [
-                        *run.get("fixtures", {}).get("notes", []),
-                        run.get("fixtures", {}).get("target", {}),
-                        *(
-                            [run.get("fixtures", {}).get("image", {})]
-                            if "image" in run.get("fixtures", {})
-                            else []
-                        ),
-                    ]
-                ],
+                "fixtures": [_fixture_fingerprint(fixture) for fixture in _run_fixtures(run)],
                 "safety_boundary": run.get("safety_boundary"),
             },
             ensure_ascii=False,
@@ -806,18 +895,10 @@ def summarize_planned_runs(
                         if message.get("role") in {"system", "user"}
                     ],
                     "tools": item.get("request", {}).get("tools"),
-                    "fixtures": [
-                        _fixture_fingerprint(fixture)
-                        for fixture in [
-                            *item.get("fixtures", {}).get("notes", []),
-                            item.get("fixtures", {}).get("target", {}),
-                            *(
-                                [item.get("fixtures", {}).get("image", {})]
-                                if "image" in item.get("fixtures", {})
-                                else []
-                            ),
-                        ]
-                    ],
+                    "fixtures": [_fixture_fingerprint(fixture) for fixture in _run_fixtures(item)],
+                    "retrieval": (
+                        retrieval_fingerprint(item["retrieval"]) if "retrieval" in item else None
+                    ),
                 },
                 ensure_ascii=False,
                 sort_keys=True,
@@ -869,6 +950,17 @@ def summarize_planned_runs(
         "scenario_order": list(scenario_runs),
         "scenarios": scenario_summaries,
     }
+
+
+def _run_fixtures(run: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return every experiment fixture in stable evidence order."""
+    fixtures = run.get("fixtures", {})
+    if "documents" in fixtures:
+        return list(fixtures.get("documents", []))
+    result = [*fixtures.get("notes", []), fixtures.get("target", {})]
+    if "image" in fixtures:
+        result.append(fixtures["image"])
+    return result
 
 
 def run_planned(

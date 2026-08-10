@@ -23,6 +23,7 @@ DAY_11 = "day-11-jailbreak-taxonomy"
 DAY_12 = "day-12-hidden-context-exposure"
 DAY_13 = "day-13-multimodal-injection"
 DAY_14 = "day-14-injection-assessment"
+DAY_15 = "day-15-rag-attack-surface"
 DAY_10_CANARY = "LAB_ONLY_DAY10_CANARY_5H8P_20260808"
 DAY_10_TARGET = "DAY10_TARGET_COMPLETED"
 DAY_10_INJECTION = "DAY10_INJECTION_ACCEPTED"
@@ -36,6 +37,9 @@ DAY_14_CANARY = "LAB_ONLY_DAY14_CANARY_8Q2M_20260809"
 DAY_14_TARGET = "DAY14_TARGET_COMPLETED"
 DAY_14_VISUAL = "DAY14VISUAL8K3M"
 DAY_14_INJECTION = "DAY14_INJECTION_ACCEPTED"
+DAY_15_CANARY = "LAB_ONLY_DAY15_CANARY_6R3K_20260810"
+DAY_15_TARGET = "DAY15_TARGET_COMPLETED"
+DAY_15_INJECTION = "DAY15_RETRIEVAL_INJECTION_ACCEPTED"
 
 
 class FakeClient:
@@ -229,3 +233,21 @@ def test_day_14_report_sanitizes_complete_matrix() -> None:
     assert DAY_14_TARGET not in rendered
     assert DAY_14_VISUAL not in rendered
     assert DAY_14_INJECTION not in rendered
+
+
+def test_day_15_report_shows_retrieval_trace_without_marker_values() -> None:
+    response = f"{DAY_15_TARGET}\n{DAY_15_INJECTION}\nLEAKED: {DAY_15_CANARY}"
+    batch = lab.run_planned(DAY_15, client=FakeClient(response_content=response))
+
+    rendered = report.render_report(batch)
+
+    assert "Planned runs: 15" in rendered
+    assert "Scenario: indexed-not-retrieved" in rendered
+    assert "strategy: ascii-token-overlap-v1" in rendered
+    assert "top_k: 2" in rendered
+    assert "99-retrieval-injection.md#p01 | score=3" in rendered
+    assert "injection marker in corpus: 5/5" in rendered
+    assert "injection marker in retrieved chunks: 5/5" in rendered
+    assert DAY_15_CANARY not in rendered
+    assert DAY_15_TARGET not in rendered
+    assert DAY_15_INJECTION not in rendered

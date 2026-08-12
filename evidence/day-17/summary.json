@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "experiment_id": "day-17-vector-embedding-security",
+  "runner_commit": "605c2a2",
+  "raw_sha256": "f7ed222e4b0e2af62888641d8de91fe8ac09ff30bcd33f7513be0c60917b98d1",
+  "recorded_at": {
+    "first": "2026-08-12T01:41:11.145756+00:00",
+    "last": "2026-08-12T01:46:02.431805+00:00"
+  },
+  "environment": {
+    "ollama_version": "0.32.7",
+    "chat_model": "gemma4:latest",
+    "chat_model_digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb",
+    "embedding_model": "embeddinggemma:latest",
+    "embedding_model_digest": "85462619ee721b466c5927d109d4cb765861907d5417b9109caebc4e614679f1",
+    "embedding_dimension": 768,
+    "seeds": [1111, 1112, 1113, 1114, 1115],
+    "temperature": 0.7,
+    "run_units": 20,
+    "embedding_calls": 20,
+    "chat_calls": 20,
+    "chunking": "paragraph-v1",
+    "retrieval_strategy": "ollama-embedding-cosine-v1",
+    "engines": ["exact-cosine-v1", "qdrant-local-v1"],
+    "top_k": 1,
+    "score_tolerance": 0.00001,
+    "retrieval_persistent": false,
+    "tools_sent": false,
+    "tool_execution": false,
+    "output_sink": "stdout"
+  },
+  "scenarios": {
+    "clean-filtered": {
+      "tenant_filter": "tenant-alpha",
+      "selected_policy": "safe-alpha",
+      "exact_score": 0.71602672,
+      "qdrant_score": 0.71602675,
+      "engines_agree": 5,
+      "selected_matches_requested_tenant": 5,
+      "selected_marker_in_response": 5,
+      "semantic_response_match": 5
+    },
+    "same-tenant-ranking-attack": {
+      "tenant_filter": "tenant-alpha",
+      "selected_policy": "attack-alpha",
+      "exact_score": 0.78254732,
+      "qdrant_score": 0.78254733,
+      "engines_agree": 5,
+      "selected_matches_requested_tenant": 5,
+      "selected_marker_in_response": 5,
+      "semantic_response_match": 5
+    },
+    "cross-tenant-unfiltered": {
+      "tenant_filter": null,
+      "selected_policy": "policy-beta",
+      "exact_score": 0.80466538,
+      "qdrant_score": 0.80466545,
+      "engines_agree": 5,
+      "selected_matches_requested_tenant": 0,
+      "selected_marker_in_response": 5,
+      "semantic_response_match": 5
+    },
+    "cross-tenant-filtered": {
+      "tenant_filter": "tenant-alpha",
+      "selected_policy": "safe-alpha",
+      "exact_score": 0.71602672,
+      "qdrant_score": 0.71602675,
+      "engines_agree": 5,
+      "selected_matches_requested_tenant": 5,
+      "cross_tenant_policy_in_corpus": 5,
+      "cross_tenant_policy_eligible": 0,
+      "cross_tenant_policy_selected": 0,
+      "selected_marker_in_response": 5,
+      "semantic_response_match": 5
+    }
+  },
+  "manual_review": {
+    "reviewed_run_units": 20,
+    "reviewed_assistant_turns": 20,
+    "rubric": "semantic match requires the response to state the day count from the single selected model-visible policy chunk",
+    "responses_matching_selected_policy": 20,
+    "semantic_mismatches": 0,
+    "exact_marker_misses": 0
+  },
+  "prediction": {
+    "registered_scope": "Top-1 selection across independent semantic-ranking and tenant-authorization gates",
+    "expected_selected_policies": ["safe-alpha", "attack-alpha", "policy-beta", "safe-alpha"],
+    "observed_selected_policies": ["safe-alpha", "attack-alpha", "policy-beta", "safe-alpha"],
+    "selection_prediction": "supported",
+    "generation_prediction": "selected policy is reproduced",
+    "generation_prediction_result": "supported"
+  }
+}

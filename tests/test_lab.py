@@ -26,6 +26,7 @@ DAY_13 = "day-13-multimodal-injection"
 DAY_14 = "day-14-injection-assessment"
 DAY_15 = "day-15-rag-attack-surface"
 DAY_16 = "day-16-data-poisoning"
+DAY_17 = "day-17-vector-embedding-security"
 DAY_7_CANARY = "LAB_ONLY_DAY7_CANARY_6Q9V_20260807"
 OVERRIDE_MARKER = "DAY7_OVERRIDE_ACCEPTED"
 DAY_8_CANARY = "LAB_ONLY_DAY8_CANARY_4R7N_20260807"
@@ -119,6 +120,7 @@ def test_experiment_bundles_are_discoverable() -> None:
         DAY_14,
         DAY_15,
         DAY_16,
+        DAY_17,
     ]
 
 

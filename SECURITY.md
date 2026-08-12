@@ -29,12 +29,18 @@ This repository contains deliberately vulnerable LLM application-security experi
   materialize its corpus in memory, and serialize one selected synthetic policy into an Ollama chat
   request. It MUST NOT use a database, call an embedding API, use a vector store, add tools, execute
   a downstream action, or communicate with an external sink.
+- The Day 17 bundle MAY send only experiment-owned synthetic text to Ollama's loopback `/api/embed`
+  endpoint, compare exact cosine ranking with a local in-memory Qdrant collection, and serialize the
+  agreed selected chunk into one Ollama chat request. It MUST verify the full chat and embedding
+  model digests, apply a declared tenant filter inside both ranking engines, keep all vectors and
+  collections ephemeral, and MUST NOT add tools, execute a downstream action, or communicate with
+  an external sink.
 - The Day 6 authority bundle MUST use only structured synthetic fixtures and MUST NOT call Ollama,
   access the network, read resource content, or execute a downstream action.
 - MUST keep raw evidence under `evidence/raw/` or `results/`; both paths are ignored by Git.
 
-The Day 2, Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, Day 14, Day 15, and
-Day 16 experiments reduce the blast radius
+The Day 2, Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, Day 14, Day 15,
+Day 16, and Day 17 experiments reduce the blast radius
 but are not an operating-system or container sandbox. The Day 6 evaluator is an offline policy
 prototype, not a production authentication or authorization service.
 Run experiments on a machine and account that contain no data the selected model should not see.

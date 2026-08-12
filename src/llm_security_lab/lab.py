@@ -24,6 +24,12 @@ from llm_security_lab.retrieval import (
     retrieve,
     validate_retrieval_spec,
 )
+from llm_security_lab.vector_retrieval import (
+    embedding_inputs,
+    retrieve_vectors,
+    validate_vector_retrieval_spec,
+    vector_retrieval_fingerprint,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 EXPERIMENTS_ROOT = PROJECT_ROOT / "experiments"
@@ -98,6 +104,15 @@ def load_definition(experiment: str = DEFAULT_EXPERIMENT) -> dict[str, Any]:
     knowledge_base_marker = definition.get("knowledge_base_observation_marker")
     if knowledge_base_marker is not None:
         _validate_observation_marker(knowledge_base_marker, "knowledge-base observation marker")
+    vector_markers = definition.get("vector_observation_markers", [])
+    if not isinstance(vector_markers, list):
+        raise ValueError("vector observation markers must be a list")
+    vector_marker_ids: set[str] = set()
+    for raw_marker in vector_markers:
+        marker = _validate_observation_marker(raw_marker, "vector observation marker")
+        if marker["id"] in vector_marker_ids:
+            raise ValueError("vector observation marker ids must be unique")
+        vector_marker_ids.add(marker["id"])
     document_marker = definition.get("document_observation_marker")
     if document_marker is not None:
         if not isinstance(document_marker, dict):
@@ -127,6 +142,23 @@ def planned_runs(definition: dict[str, Any]) -> list[dict[str, Any]]:
     scenarios = definition.get("scenarios")
     if not isinstance(scenarios, dict) or not scenarios:
         raise ValueError("schema-v3 scenarios must be a non-empty object")
+    has_vector_retrieval = any(
+        isinstance(scenario, dict) and "vector_retrieval" in scenario
+        for scenario in scenarios.values()
+    )
+    embedding_model = definition.get("embedding_model")
+    if has_vector_retrieval:
+        if (
+            not isinstance(embedding_model, dict)
+            or set(embedding_model) != {"name", "digest"}
+            or not all(
+                isinstance(embedding_model.get(key), str) and embedding_model[key]
+                for key in embedding_model
+            )
+        ):
+            raise ValueError("vector retrieval requires embedding_model name and digest")
+    elif embedding_model is not None:
+        raise ValueError("embedding_model requires at least one vector retrieval scenario")
 
     plan: list[dict[str, Any]] = []
     seen_run_ids: set[str] = set()
@@ -171,6 +203,7 @@ def planned_runs(definition: dict[str, Any]) -> list[dict[str, Any]]:
                 "knowledge_base",
                 "notes",
                 "retrieval",
+                "vector_retrieval",
                 "user_request",
                 "user_turns",
                 "document",
@@ -186,12 +219,23 @@ def planned_runs(definition: dict[str, Any]) -> list[dict[str, Any]]:
         notes = scenario.get("notes")
         retrieval = scenario.get("retrieval")
         knowledge_base = scenario.get("knowledge_base")
+        vector_retrieval = scenario.get("vector_retrieval")
         if message_fixture is not None:
             pass
-        elif retrieval is not None and knowledge_base is not None:
+        elif retrieval is not None and knowledge_base is not None and vector_retrieval is None:
             raise ValueError(
                 f"planned scenario {scenario_name} cannot declare both retrieval and knowledge_base"
             )
+        elif sum(item is not None for item in (retrieval, knowledge_base, vector_retrieval)) > 1:
+            raise ValueError(
+                f"planned scenario {scenario_name} declares incompatible retrieval modes"
+            )
+        elif vector_retrieval is not None:
+            if notes is not None:
+                raise ValueError(f"planned vector scenario {scenario_name} cannot declare notes")
+            if user_request is None or user_turns is not None:
+                raise ValueError(f"planned vector scenario {scenario_name} needs one user request")
+            validate_vector_retrieval_spec(vector_retrieval)
         elif knowledge_base is not None:
             if notes is not None:
                 raise ValueError(
@@ -220,19 +264,28 @@ def planned_runs(definition: dict[str, Any]) -> list[dict[str, Any]]:
                 )
             validate_retrieval_spec(retrieval)
         document = scenario.get("document")
-        if (retrieval is not None or knowledge_base is not None) and document is not None:
+        if (
+            any(item is not None for item in (retrieval, knowledge_base, vector_retrieval))
+            and document is not None
+        ):
             raise ValueError(
                 f"planned retrieval scenario {scenario_name} cannot declare a document"
             )
         if document is not None:
             validate_document_spec(document)
         image = scenario.get("image")
-        if (retrieval is not None or knowledge_base is not None) and image is not None:
+        if (
+            any(item is not None for item in (retrieval, knowledge_base, vector_retrieval))
+            and image is not None
+        ):
             raise ValueError(f"planned retrieval scenario {scenario_name} cannot declare an image")
         if image is not None and (not isinstance(image, str) or not image.strip()):
             raise ValueError(f"planned scenario {scenario_name} image must be a non-empty path")
         tools = validate_tools(scenario.get("tools"))
-        if (retrieval is not None or knowledge_base is not None) and tools is not None:
+        if (
+            any(item is not None for item in (retrieval, knowledge_base, vector_retrieval))
+            and tools is not None
+        ):
             raise ValueError(f"planned retrieval scenario {scenario_name} cannot declare tools")
         runs = scenario.get("runs")
         if not isinstance(runs, list) or not runs or len(runs) > 20:
@@ -556,10 +609,12 @@ def _marker_observations(
     evidence: dict[str, Any],
     retrieval_trace: dict[str, Any] | None = None,
     knowledge_base_trace: dict[str, Any] | None = None,
+    vector_retrieval_trace: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     marker_definition = definition.get("observation_marker")
     extra_markers = response_markers(definition)
-    if marker_definition is None and not extra_markers:
+    vector_markers = definition.get("vector_observation_markers", [])
+    if marker_definition is None and not extra_markers and not vector_markers:
         return None
 
     model_contents = [_response_content(response) for response in responses]
@@ -636,6 +691,44 @@ def _marker_observations(
                 "knowledge_base_stale": bool(knowledge_base_trace.get("corpus", {}).get("stale")),
             }
         )
+    if vector_markers:
+        if vector_retrieval_trace is None:
+            raise ValueError("vector observation markers require vector retrieval evidence")
+        chunks = vector_retrieval_trace.get("chunks", [])
+        eligible_ids = set(vector_retrieval_trace.get("eligible_chunk_ids", []))
+        selected = vector_retrieval_trace.get("qdrant_selected", [])
+        for raw_marker in vector_markers:
+            marker = _validate_observation_marker(raw_marker, "vector observation marker")
+            marker_id = marker["id"]
+            marker_value = marker["value"]
+            observations.update(
+                {
+                    f"{marker_id}_in_corpus": any(
+                        marker_value in chunk.get("content", "") for chunk in chunks
+                    ),
+                    f"{marker_id}_eligible_after_filter": any(
+                        chunk.get("id") in eligible_ids and marker_value in chunk.get("content", "")
+                        for chunk in chunks
+                    ),
+                    f"{marker_id}_selected": any(
+                        marker_value in item.get("content", "") for item in selected
+                    ),
+                    f"{marker_id}_in_request": marker_value
+                    in json.dumps(payload, ensure_ascii=False, sort_keys=True),
+                    f"{marker_id}_in_model_response": any(
+                        marker_value in content for content in model_contents
+                    ),
+                }
+            )
+        requested_tenant = vector_retrieval_trace.get("requested_tenant")
+        observations.update(
+            {
+                "vector_engines_agree": vector_retrieval_trace.get("engines_agree") is True,
+                "tenant_filter_applied": vector_retrieval_trace.get("tenant_filter") is not None,
+                "selected_matches_requested_tenant": bool(selected)
+                and all(item.get("tenant_id") == requested_tenant for item in selected),
+            }
+        )
     document_marker = definition.get("document_observation_marker")
     if document_marker is not None:
         target = fixtures.get("target", {})
@@ -667,16 +760,21 @@ def _run_scenario(
     experiment: str,
     version: dict[str, Any],
     model: dict[str, Any],
+    embedding_model: dict[str, Any] | None = None,
     run_id: str | None = None,
 ) -> dict[str, Any]:
     """Execute one already validated scenario with preflighted model metadata."""
     retrieval_spec = scenario_definition.get("retrieval")
     knowledge_base_spec = scenario_definition.get("knowledge_base")
+    vector_retrieval_spec = scenario_definition.get("vector_retrieval")
     message_path = scenario_definition.get("message_fixture")
     message_fixture = read_fixture(message_path, experiment) if message_path is not None else None
     notes = (
         [read_fixture(path, experiment) for path in scenario_definition["notes"]]
-        if retrieval_spec is None and knowledge_base_spec is None and message_fixture is None
+        if retrieval_spec is None
+        and knowledge_base_spec is None
+        and vector_retrieval_spec is None
+        and message_fixture is None
         else []
     )
     document = scenario_definition.get("document")
@@ -685,6 +783,9 @@ def _run_scenario(
     target = None
     retrieval_trace = None
     knowledge_base_trace = None
+    vector_retrieval_trace = None
+    embedding_request = None
+    embedding_response = None
     documents: list[dict[str, str]] = []
     if message_fixture is not None:
         target = None
@@ -694,6 +795,27 @@ def _run_scenario(
             for path in validate_retrieval_spec(retrieval_spec)["documents"]
         ]
         retrieval_trace = retrieve(scenario_definition["user_request"], documents, retrieval_spec)
+    elif vector_retrieval_spec is not None:
+        if embedding_model is None:
+            raise ValueError("vector retrieval scenario is missing preflighted embedding model")
+        validated_vector = validate_vector_retrieval_spec(vector_retrieval_spec)
+        documents = []
+        for document_spec in validated_vector["documents"]:
+            fixture = read_fixture(document_spec["path"], experiment)
+            documents.append({**fixture, "tenant_id": document_spec["tenant_id"]})
+        embedding_request = {
+            "model": embedding_model["name"],
+            "input": embedding_inputs(scenario_definition["user_request"], documents),
+            "truncate": False,
+        }
+        embedding_response = ollama.request_json("/api/embed", embedding_request)
+        vector_retrieval_trace = retrieve_vectors(
+            scenario_definition["user_request"],
+            documents,
+            vector_retrieval_spec,
+            embedding_response,
+            embedding_model["name"],
+        )
     elif knowledge_base_spec is not None:
         validated_knowledge_base = validate_knowledge_base_spec(knowledge_base_spec)
         event_log = read_fixture(validated_knowledge_base["events"], experiment)
@@ -731,6 +853,10 @@ def _run_scenario(
     for turn_number, user_turn in enumerate(user_turns, start=1):
         if turn_number == 1 and message_fixture is not None:
             user_content = message_fixture["content"]
+        elif turn_number == 1 and vector_retrieval_trace is not None:
+            user_content = build_retrieval_user_message(
+                user_turn, vector_retrieval_trace["serialized_context"]
+            )
         elif turn_number == 1 and retrieval_trace is not None:
             user_content = build_retrieval_user_message(
                 user_turn, retrieval_trace["serialized_context"]
@@ -773,7 +899,7 @@ def _run_scenario(
             "event_log": knowledge_base_trace["event_log"],
             "documents": knowledge_base_trace["source_documents"],
         }
-    elif retrieval_trace is not None:
+    elif retrieval_trace is not None or vector_retrieval_trace is not None:
         fixtures = {"documents": documents}
     else:
         fixtures = {"notes": notes, "target": target}
@@ -793,9 +919,10 @@ def _run_scenario(
             "images_sent": image is not None,
             "ocr_performed": False,
             "output_sink": "stdout",
-            "retrieval_performed": retrieval_trace is not None,
-            "embedding_api_called": False,
-            "vector_store_used": False,
+            "retrieval_performed": retrieval_trace is not None
+            or vector_retrieval_trace is not None,
+            "embedding_api_called": vector_retrieval_trace is not None,
+            "vector_store_used": vector_retrieval_trace is not None,
             "retrieval_persistent": False,
             "knowledge_base_lifecycle_simulated": knowledge_base_trace is not None,
             "exact_message_fixture": message_fixture is not None,
@@ -808,6 +935,11 @@ def _run_scenario(
     }
     if retrieval_trace is not None:
         evidence["retrieval"] = retrieval_trace
+    if vector_retrieval_trace is not None:
+        evidence["embedding_model"] = embedding_model
+        evidence["embedding_request"] = embedding_request
+        evidence["embedding_response"] = embedding_response
+        evidence["vector_retrieval"] = vector_retrieval_trace
     if knowledge_base_trace is not None:
         evidence["knowledge_base"] = knowledge_base_trace
     if len(conversation) > 1:
@@ -820,6 +952,7 @@ def _run_scenario(
         evidence,
         retrieval_trace,
         knowledge_base_trace,
+        vector_retrieval_trace,
     )
     if observations is not None:
         evidence["observations"] = observations
@@ -855,6 +988,7 @@ def run(
         experiment=experiment,
         version=version,
         model=model,
+        embedding_model=None,
     )
 
 
@@ -989,6 +1123,7 @@ def summarize_planned_runs(
                 "scenario_id": item.get("scenario_id"),
                 "ollama_version": item.get("ollama_version"),
                 "model": item.get("model"),
+                "embedding_model": item.get("embedding_model"),
                 "safety_boundary": item.get("safety_boundary"),
             },
             ensure_ascii=False,
@@ -1021,6 +1156,11 @@ def summarize_planned_runs(
                     "knowledge_base": (
                         knowledge_base_fingerprint(item["knowledge_base"])
                         if "knowledge_base" in item
+                        else None
+                    ),
+                    "vector_retrieval": (
+                        vector_retrieval_fingerprint(item["vector_retrieval"])
+                        if "vector_retrieval" in item
                         else None
                     ),
                 },
@@ -1070,6 +1210,7 @@ def summarize_planned_runs(
     return {
         "experiment_id": runs[0].get("scenario_id"),
         "model_digest": runs[0].get("model", {}).get("digest"),
+        "embedding_model_digest": runs[0].get("embedding_model", {}).get("digest"),
         "runs": len(runs),
         "scenario_order": list(scenario_runs),
         "scenarios": scenario_summaries,
@@ -1103,7 +1244,13 @@ def run_planned(
     plan = planned_runs(definition)
     ollama = client or OllamaClient()
     version = ollama.request_json("/api/version")
-    model = select_model(ollama.request_json("/api/tags"), definition["model"])
+    tags = ollama.request_json("/api/tags")
+    model = select_model(tags, definition["model"])
+    embedding_model = (
+        select_model(tags, definition["embedding_model"])
+        if "embedding_model" in definition
+        else None
+    )
     runs = []
     for item in plan:
         scenario_definition = definition["scenarios"][item["scenario"]]
@@ -1118,6 +1265,7 @@ def run_planned(
                 experiment=experiment,
                 version=version,
                 model=model,
+                embedding_model=embedding_model,
                 run_id=item["run_id"],
             )
         )

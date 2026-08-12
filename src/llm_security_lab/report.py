@@ -35,6 +35,18 @@ PREDICATE_LABELS = {
     "knowledge_base_stale": "knowledge base stale",
     "safe_policy_in_model_response": "safe policy in model response",
     "poisoned_policy_in_model_response": "poisoned policy in model response",
+    "safe_policy_in_corpus": "safe policy in corpus",
+    "safe_policy_eligible_after_filter": "safe policy eligible after filter",
+    "safe_policy_selected": "safe policy selected",
+    "same_tenant_attack_in_corpus": "same-tenant attack in corpus",
+    "same_tenant_attack_eligible_after_filter": "same-tenant attack eligible after filter",
+    "same_tenant_attack_selected": "same-tenant attack selected",
+    "cross_tenant_policy_in_corpus": "cross-tenant policy in corpus",
+    "cross_tenant_policy_eligible_after_filter": "cross-tenant policy eligible after filter",
+    "cross_tenant_policy_selected": "cross-tenant policy selected",
+    "vector_engines_agree": "exact cosine and Qdrant agree",
+    "tenant_filter_applied": "tenant filter applied",
+    "selected_matches_requested_tenant": "selected chunks match requested tenant",
 }
 
 
@@ -130,6 +142,14 @@ def render_planned_report(batch: dict[str, Any]) -> str:
         "OCR performed: " + str(first["safety_boundary"].get("ocr_performed", False)).lower(),
         "Output sink: stdout",
     ]
+    embedding_model = first.get("embedding_model")
+    if embedding_model is not None:
+        lines.extend(
+            [
+                f"Embedding model: {embedding_model['name']}",
+                f"Embedding digest: {embedding_model['digest']}",
+            ]
+        )
     for scenario in summary["scenario_order"]:
         scenario_runs = [run for run in runs if run["scenario"] == scenario]
         scenario_summary = summary["scenarios"][scenario]
@@ -186,6 +206,35 @@ def render_planned_report(batch: dict[str, Any]) -> str:
                 f"    {item['rank']}. {item['id']} | score={item['score']} | "
                 f"sha256={item['sha256']}"
                 for item in retrieval["selected"]
+            )
+        vector_retrieval = scenario_first.get("vector_retrieval")
+        if vector_retrieval is not None:
+            vector_embedding = vector_retrieval["embedding"]
+            lines.extend(
+                [
+                    "Vector retrieval:",
+                    f"  embedding model: {vector_embedding['model']}",
+                    f"  dimension: {vector_embedding['dimension']}",
+                    f"  input count: {vector_embedding['input_count']}",
+                    f"  strategy: {vector_retrieval['strategy']}",
+                    f"  top_k: {vector_retrieval['top_k']}",
+                    f"  requested tenant: {vector_retrieval['requested_tenant']}",
+                    f"  tenant filter: {vector_retrieval['tenant_filter']}",
+                    f"  engines agree: {str(vector_retrieval['engines_agree']).lower()}",
+                    f"  serialized context: {vector_retrieval['serialized_sha256']}",
+                    "  exact cosine selected chunks:",
+                ]
+            )
+            lines.extend(
+                f"    {item['rank']}. {item['id']} | tenant={item['tenant_id']} | "
+                f"score={item['score']:.8f} | sha256={item['sha256']}"
+                for item in vector_retrieval["exact_selected"]
+            )
+            lines.append("  Qdrant selected chunks:")
+            lines.extend(
+                f"    {item['rank']}. {item['id']} | tenant={item['tenant_id']} | "
+                f"score={item['score']:.8f} | sha256={item['sha256']}"
+                for item in vector_retrieval["qdrant_selected"]
             )
         lines.append("Per-run observations:")
         predicate_names = tuple(scenario_summary["true_counts"])

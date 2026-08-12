@@ -2,7 +2,7 @@
 
 > **Type:** Explanation
 > **Audience:** Developers, AI assistants, and any tooling that needs project context
-> **Last updated:** 2026-08-10
+> **Last updated:** 2026-08-12
 >
 > A versioned, synthetic-data lab whose independent experiment bundles support the 30-day LLM
 > application-security series.
@@ -39,7 +39,7 @@ artifacts and their verification.
 |---|---|---|
 | Language | Python 3.11+ | Standard-library HTTP and filesystem APIs are sufficient for the baseline. |
 | Environment | uv with `uv.lock` | Locks development dependencies and provides one command surface. |
-| Runtime dependencies | Python standard library + pypdf 6.x | Keeps HTTP and HTML/email parsing in the standard library; pins one PDF text/metadata extractor. |
+| Runtime dependencies | Python standard library + pypdf 6.x + qdrant-client 1.19.x | Keeps transport and common parsing small while enabling audited PDF extraction and an ephemeral local vector-engine comparison. |
 | Test | pytest | Supports offline fake clients, temporary paths, and explicit failure assertions. |
 | Lint and format | Ruff | Provides one configured check and format gate. |
 | Model runtime | Ollama on `127.0.0.1` | Preserves the local-only Day 4 safety boundary. |
@@ -68,6 +68,9 @@ versioned experiment bundle
                     optional deterministic retrieval
                     (paragraph chunks + token overlap)
                                   │
+                    optional vector retrieval
+                    (/api/embed + exact cosine + in-memory Qdrant)
+                                  │
                                   ▼
                             POST /api/chat
                                   │
@@ -87,6 +90,9 @@ versioned experiment bundle
   serialization evidence without an embedding endpoint or persistent index.
 - Day 16 lifecycle replay is in-memory and deterministic: it records source versions, revocation,
   derived-corpus rebuilds, staleness, and corpus hashes without a database.
+- Day 17 treats ranking and authorization as independent gates: both exact cosine and Qdrant apply
+  the declared tenant filter before Top-k, and the runner fails closed unless their IDs and scores
+  agree within the recorded tolerance.
 
 ## 4. Directory Structure
 
@@ -98,6 +104,7 @@ versioned experiment bundle
 │   ├── knowledge_base.py      # Synthetic publish/revoke/rebuild lifecycle replay
 │   ├── report.py              # Sanitized repeated-run summary
 │   ├── retrieval.py           # Deterministic paragraph chunking and sparse retrieval trace
+│   ├── vector_retrieval.py    # Embedding validation, exact cosine, and local Qdrant parity
 │   └── ollama.py              # Loopback-only JSON client
 ├── experiments/
 │   └── <experiment-id>/       # Definition plus experiment-owned synthetic fixtures
@@ -165,6 +172,14 @@ reference a published version; rebuild events materialize the latest non-revoked
 source. Evidence and the sanitized report keep active source state, corpus state, retrieval, and
 model response as separate layers.
 
+Day 17 adds a mutually exclusive scenario-level `vector_retrieval` object and a top-level pinned
+`embedding_model`. A scenario declares synthetic Markdown documents with tenant IDs, a requested
+tenant, an optional tenant filter, `paragraph-v1`, `ollama-embedding-cosine-v1`, bounded `top_k`, and
+the fixed exact-cosine/Qdrant engine order. The runner sends the query and chunks in one batch to
+loopback `/api/embed`, validates vector count, dimension, finiteness, and model name, applies the
+filter inside each engine, and refuses to call chat unless selected IDs and scores agree. Raw
+evidence retains vectors; the sanitized fingerprint and report retain only hashes and audit fields.
+
 ## 7. Background Jobs & Scheduled Tasks
 
 N/A — the project has no worker, queue, scheduler, daemon, or recurring task.
@@ -175,8 +190,9 @@ N/A — the project has no worker, queue, scheduler, daemon, or recurring task.
 |---|---|---|
 | Ollama API | `src/llm_security_lab/ollama.py` | Plain HTTP to `127.0.0.1`; only `/api/*` paths accepted for Day 4/5 |
 | Day 6 authority runner | `src/llm_security_lab/authority.py` | Offline deterministic evaluator; no network or model |
+| Qdrant local mode | `src/llm_security_lab/vector_retrieval.py` | Process-local `:memory:` collection; no server, persistence, or outbound call |
 
-The Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, Day 14, Day 15, and Day 16
+The Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, Day 14, Day 15, Day 16, and Day 17
 bundles call
 `GET /api/version`, `GET /api/tags`, and `POST /api/chat`. No cloud API, credential, browser, or
 downstream action is configured. Day 4–11 send no tool schema. Day 12 sends synthetic tool schemas
@@ -211,11 +227,16 @@ selected context, serialized request, and response.
 Day 16 materializes a corpus from an experiment-owned event log before invoking that same retriever.
 It uses no database or persistent index; raw evidence separates accepted source versions, revoked
 versions, the last rebuild, corpus staleness, selected context, serialized request, and response.
+Day 17 additionally calls loopback `POST /api/embed` for synthetic inputs, creates one ephemeral
+Qdrant local collection per run, and compares its filtered cosine result with an exact calculation.
+The chat and embedding tags are each checked against their configured full digest before inference.
 
 ## 9. Database / Data Stores
 
-N/A — the project owns no database, cache, object store, vector store, or persistent runtime state.
+N/A — the project owns no persistent database, cache, object store, vector store, or runtime state.
 Day 16 replays persistent-state semantics entirely in memory from a versioned synthetic event log.
+Day 17 creates and discards a Qdrant `:memory:` collection inside each run; it is an experiment
+engine, not repository-owned persistence.
 Git stores scenario definitions, synthetic fixtures, and sanitized evidence summaries.
 
 ## 10. Environments & Deployment

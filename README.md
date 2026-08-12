@@ -208,6 +208,22 @@ uv run llm-security-lab \
 uv run llm-security-report evidence/raw/day-16/results.json
 ```
 
+The Day 17 experiment separates semantic ranking from tenant authorization. It embeds only
+experiment-owned synthetic text with `embeddinggemma:latest`, applies the same optional tenant
+filter to exact cosine and an in-memory Qdrant collection, requires both engines to select the same
+Top-1 chunk, and then sends only that chunk to the pinned chat model. Its four fixed scenarios show
+that a tenant filter blocks a higher-scoring cross-tenant chunk but cannot distinguish a poisoned
+chunk that is already inside the authorized tenant. Raw vectors remain in ignored evidence only;
+the sanitized report exposes hashes, dimensions, selected IDs, scores, and aggregate predicates.
+
+```bash
+uv run llm-security-lab \
+  --experiment day-17-vector-embedding-security \
+  --run-plan \
+  --output evidence/raw/day-17/results.json
+uv run llm-security-report evidence/raw/day-17/results.json
+```
+
 Schema-v3 scenarios may declare an optional `tools` array containing Ollama function definitions.
 The runner records those definitions in the request and evidence but has no function dispatcher: it
 never executes a returned tool call or sends a tool-result message. Ollama's native chat roles do not
@@ -224,6 +240,12 @@ Schema-v3 scenarios may instead declare a `knowledge_base` object with one event
 experiment-owned Markdown; revoke events deactivate one version; rebuild events atomically
 materialize the latest non-revoked version of every source. The runner records active source state,
 corpus staleness, corpus hash, retrieval, request, and response separately.
+
+Schema-v3 scenarios may instead declare a `vector_retrieval` object with experiment-owned Markdown
+documents and tenant IDs, `paragraph-v1` chunking, `ollama-embedding-cosine-v1` scoring, bounded
+`top_k`, an optional tenant filter, and the fixed exact-cosine/Qdrant engine pair. This mode requires
+a pinned `embedding_model`, is mutually exclusive with all other context modes, and fails closed if
+embedding shapes, hashes, model identity, selected IDs, or engine scores disagree.
 
 The Day 6 authority experiment runs all four synthetic cases without Ollama, network access,
 resource-content reads, or downstream actions:

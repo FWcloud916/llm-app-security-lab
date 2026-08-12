@@ -22,6 +22,10 @@ This project owns versioned, synthetic-data experiments for the 30-day LLM appli
 - Day 16 MAY replay an experiment-owned synthetic publish/rebuild/revoke event log and retrieve from
   its materialized in-memory corpus, but MUST NOT use a database, embedding API, vector store,
   tools, downstream actions, or an outbound sink (source: `SECURITY.md`).
+- Day 17 MAY call Ollama `/api/embed` for experiment-owned synthetic text and compare exact cosine
+  ranking with an in-memory Qdrant collection. It MUST verify both model digests, apply any declared
+  tenant filter inside each retrieval engine, and MUST NOT persist the collection, add tools,
+  execute downstream actions, or add an outbound sink (source: `SECURITY.md`).
 - MUST preserve the model, runtime, options, fixture hashes, full request, and observed response for every claimed result (source: `README.md`, `src/llm_security_lab/lab.py`).
 - MUST pass `uv run pytest`, `uv run ruff check .`, and `uv run ruff format --check .` before declaring code changes complete (source: `pyproject.toml`).
 
@@ -46,6 +50,7 @@ uv run llm-security-lab --experiment day-13-multimodal-injection --run-plan
 uv run llm-security-lab --experiment day-14-injection-assessment --run-plan
 uv run llm-security-lab --experiment day-15-rag-attack-surface --run-plan
 uv run llm-security-lab --experiment day-16-data-poisoning --run-plan
+uv run llm-security-lab --experiment day-17-vector-embedding-security --run-plan
 uv run llm-security-report evidence/raw/day-05/clean.json
 uv run llm-security-authority --experiment day-06-authority-boundary
 uv run llm-security-authority-report evidence/raw/day-06/results.json

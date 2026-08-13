@@ -2,7 +2,7 @@
   "schema_version": 1,
   "experiment_id": "day-18-excessive-agency",
   "runner": "deterministic_agent_agency",
-  "runner_commit": "7f02127",
+  "runner_commit": "c917b52",
   "raw_sha256": "7963159541e8a714bd5fbe81f51a6c19d685fe0c6b04810b8ecda07ee71aa6ee",
   "recorded_at": "2026-08-13T15:22:26.683359+00:00",
   "fixtures": {

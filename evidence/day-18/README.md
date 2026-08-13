@@ -34,7 +34,7 @@ identities, reviewed message bodies, and exact approval envelopes remain under i
 
 ## Fixed Contract
 
-- Runner commit: `7f02127`
+- Runner commit: `c917b52`
 - Cases / proposals: `7 / 9`
 - Fixture policy SHA-256: `9709125b1e941da70c4589f0bd5a7d7c3730b078994dbcb7a03042f9fa68d5c7`
 - Fixture risk rules SHA-256: `1830a5cc7fba42cbca35e90a8bbc7b0589d3924eaeb7db697afb04504a19eec8`

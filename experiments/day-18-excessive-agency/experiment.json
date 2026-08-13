@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "day-18-excessive-agency",
+  "runner": "deterministic_agent_agency",
+  "policy": "policy.json",
+  "risk_rules": "risk-rules.json",
+  "cases": "cases.json",
+  "approval_required_actions": [
+    "send_mail",
+    "delete_mail",
+    "issue_refund"
+  ]
+}

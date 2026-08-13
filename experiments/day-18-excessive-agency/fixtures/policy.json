@@ -1,0 +1,41 @@
+{
+  "version": "agency-policy-v1",
+  "allow": [
+    {
+      "subject_ref": "subject-user-alice",
+      "agent_ref": "shared-admin-agent",
+      "action": "send_mail",
+      "resource_id": "mailbox-alice"
+    },
+    {
+      "subject_ref": "subject-user-alice",
+      "agent_ref": "dedicated-reader-agent",
+      "action": "read_mail",
+      "resource_id": "mailbox-alice"
+    },
+    {
+      "subject_ref": "subject-user-alice",
+      "agent_ref": "dedicated-reader-agent",
+      "action": "draft_reply",
+      "resource_id": "mailbox-alice"
+    },
+    {
+      "subject_ref": "subject-user-alice",
+      "agent_ref": "dedicated-sender-agent",
+      "action": "read_mail",
+      "resource_id": "mailbox-alice"
+    },
+    {
+      "subject_ref": "subject-user-alice",
+      "agent_ref": "dedicated-sender-agent",
+      "action": "draft_reply",
+      "resource_id": "mailbox-alice"
+    },
+    {
+      "subject_ref": "subject-user-alice",
+      "agent_ref": "dedicated-sender-agent",
+      "action": "send_mail",
+      "resource_id": "mailbox-alice"
+    }
+  ]
+}

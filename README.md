@@ -10,6 +10,8 @@ A versioned, synthetic-data lab for reproducing the LLM application-security exp
 - Prints the full fixtures, request, model metadata, response, token counts, and timings as JSON.
 - Executes predeclared schema-v3 run plans without prompt, seed, or temperature CLI overrides.
 - Runs the Day 6 deterministic authority-boundary bundle without a model or network call.
+- Runs the Day 18 deterministic agency bundle with synthetic proposals and in-memory side effects,
+  without a model, network call, mailbox, or payment service.
 - Preserves stable milestone tags so an article can point to the exact code it described.
 
 ## Quickstart
@@ -224,6 +226,20 @@ uv run llm-security-lab \
 uv run llm-security-report evidence/raw/day-17/results.json
 ```
 
+The Day 18 experiment assumes a fixed malicious Agent proposal and isolates the blast-radius
+controls around it. Seven offline cases compare excessive functionality, restricted functionality,
+dedicated downstream permissions, exact approval binding, post-approval mutation, batch isolation,
+and one keyword-paraphrase miss. The runner records functionality, authorization, advisory risk,
+approval, and synthetic state transition separately. It does not call a model or network and never
+connects to a mailbox, payment service, or external sink.
+
+```bash
+uv run llm-security-agency \
+  --experiment day-18-excessive-agency \
+  > evidence/raw/day-18/results.json
+uv run llm-security-agency-report evidence/raw/day-18/results.json
+```
+
 Schema-v3 scenarios may declare an optional `tools` array containing Ollama function definitions.
 The runner records those definitions in the request and evidence but has no function dispatcher: it
 never executes a returned tool call or sends a tool-result message. Ollama's native chat roles do not
@@ -270,7 +286,7 @@ The test suite does not call a model or the network.
 ## Project structure
 
 ```text
-src/          Generic runner, deterministic authority runner, reporters, Ollama client, and CLIs
+src/          Generic runner, deterministic authority/agency runners, reporters, Ollama client, and CLIs
 experiments/  Independent definitions and synthetic fixture bundles
 evidence/     Sanitized experiment checkpoints; raw runs stay ignored
 tests/        Offline unit tests

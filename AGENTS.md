@@ -26,6 +26,9 @@ This project owns versioned, synthetic-data experiments for the 30-day LLM appli
   ranking with an in-memory Qdrant collection. It MUST verify both model digests, apply any declared
   tenant filter inside each retrieval engine, and MUST NOT persist the collection, add tools,
   execute downstream actions, or add an outbound sink (source: `SECURITY.md`).
+- Day 18 MUST run offline with fixed synthetic proposals, identities, policy, review envelopes, and
+  an in-memory side-effect ledger. It MUST NOT call a model, access the network, connect to a real
+  mailbox or payment system, or execute an external side effect (source: `SECURITY.md`).
 - MUST preserve the model, runtime, options, fixture hashes, full request, and observed response for every claimed result (source: `README.md`, `src/llm_security_lab/lab.py`).
 - MUST pass `uv run pytest`, `uv run ruff check .`, and `uv run ruff format --check .` before declaring code changes complete (source: `pyproject.toml`).
 
@@ -54,6 +57,8 @@ uv run llm-security-lab --experiment day-17-vector-embedding-security --run-plan
 uv run llm-security-report evidence/raw/day-05/clean.json
 uv run llm-security-authority --experiment day-06-authority-boundary
 uv run llm-security-authority-report evidence/raw/day-06/results.json
+uv run llm-security-agency --experiment day-18-excessive-agency
+uv run llm-security-agency-report evidence/raw/day-18/results.json
 uv run pytest
 uv run ruff check .
 uv run ruff format --check .

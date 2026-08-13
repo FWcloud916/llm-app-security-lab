@@ -2,7 +2,7 @@
 
 > **Type:** Explanation
 > **Audience:** Developers, AI assistants, and any tooling that needs project context
-> **Last updated:** 2026-08-12
+> **Last updated:** 2026-08-13
 >
 > A versioned, synthetic-data lab whose independent experiment bundles support the 30-day LLM
 > application-security series.
@@ -31,6 +31,8 @@ artifacts and their verification.
   tool-result message, or external sink.
 - Day 13 sends one experiment-owned synthetic PNG through Ollama's native vision input. The runner
   performs no OCR, tool call, downstream action, or external communication.
+- Day 18 does not call a model. It evaluates fixed synthetic proposals through functionality,
+  downstream permission, advisory risk, exact approval, and in-memory side-effect gates.
 - The model artifact is not distributed through this repository.
 
 ## 2. Tech Stack
@@ -76,6 +78,14 @@ versioned experiment bundle
                                   │
                                   ▼
                     complete JSON evidence on stdout
+
+Day 18 fixed synthetic proposal
+    │
+    ├─► available-function gate
+    ├─► subject + dedicated-Agent permission gate
+    ├─► advisory keyword annotation
+    ├─► exact or batch approval-envelope gate
+    └─► in-memory synthetic side-effect ledger
 ```
 
 ### Key Principles
@@ -93,6 +103,9 @@ versioned experiment bundle
 - Day 17 treats ranking and authorization as independent gates: both exact cosine and Qdrant apply
   the declared tenant filter before Top-k, and the runner fails closed unless their IDs and scores
   agree within the recorded tolerance.
+- Day 18 treats Agent proposals as already compromised input. Keyword findings never grant
+  authority; only available functions, deterministic policy, exact review binding, and the action's
+  approval mode determine whether an in-memory synthetic side effect occurs.
 
 ## 4. Directory Structure
 
@@ -100,6 +113,7 @@ versioned experiment bundle
 .
 ├── src/llm_security_lab/
 │   ├── cli.py                 # Experiment selection, repetition or fixed plans, and raw JSON output
+│   ├── agency.py              # Offline Excessive Agency control-flow matrix and report
 │   ├── lab.py                 # Bundle, fixture, digest, request, and evidence flow
 │   ├── knowledge_base.py      # Synthetic publish/revoke/rebuild lifecycle replay
 │   ├── report.py              # Sanitized repeated-run summary
@@ -139,6 +153,8 @@ llm-security-lab --experiment <schema-v3-experiment-id> --run-plan --output evid
 llm-security-report <raw-json>
 llm-security-authority --experiment day-06-authority-boundary
 llm-security-authority-report <raw-json>
+llm-security-agency --experiment day-18-excessive-agency
+llm-security-agency-report <raw-json>
 ```
 
 The legacy command defaults to `day-04-vulnerable-baseline`. A schema-v2 experiment selects one
@@ -190,6 +206,7 @@ N/A — the project has no worker, queue, scheduler, daemon, or recurring task.
 |---|---|---|
 | Ollama API | `src/llm_security_lab/ollama.py` | Plain HTTP to `127.0.0.1`; only `/api/*` paths accepted for Day 4/5 |
 | Day 6 authority runner | `src/llm_security_lab/authority.py` | Offline deterministic evaluator; no network or model |
+| Day 18 agency runner | `src/llm_security_lab/agency.py` | Offline deterministic evaluator; synthetic in-memory side effects only |
 | Qdrant local mode | `src/llm_security_lab/vector_retrieval.py` | Process-local `:memory:` collection; no server, persistence, or outbound call |
 
 The Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, Day 14, Day 15, Day 16, and Day 17

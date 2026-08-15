@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "experiment_id": "day-19-tool-calling-security",
+  "runner": "deterministic_tool_boundary",
+  "runner_commit": "2bb7a22",
+  "raw_sha256": "89e7c5ae4268a376742c668c94c5d25f3c58d9e7e9448d9a17edd2c021deeff4",
+  "recorded_at": "2026-08-15T12:19:24.444651+00:00",
+  "fixtures": {
+    "tool_schema_sha256": "3370214e9df8e24dad2ca8f6b10630707f703dc267854e3a9c781ea81eb4f079",
+    "policy_sha256": "255919a154af4ca65f8870bebf1decbd9e18dee850710ec89387d56a14fbd5d8",
+    "cases_sha256": "d987085e01be8919d2ac5043eb4f14fc479d25d97ea74f157d101e804260c928"
+  },
+  "summary": {
+    "cases": 5,
+    "path_evaluations": 10,
+    "matched_expected": 5,
+    "vulnerable_sink_reached": 4,
+    "hardened_sink_reached": 1,
+    "hardened_blocks": 3,
+    "tool_outputs_exposed": 1,
+    "tool_outputs_contained": 1,
+    "in_memory_sink_events": 5,
+    "model_calls": 0,
+    "network_calls": 0,
+    "subprocess_calls": 0,
+    "external_side_effects": 0
+  },
+  "cases": {
+    "clean-public-fetch": {
+      "vulnerable": "unchecked_url_forwarded",
+      "hardened": "destination_allowed"
+    },
+    "forged-authority-field": {
+      "vulnerable": "unchecked_url_forwarded",
+      "hardened": "schema_rejected"
+    },
+    "private-url-ssrf": {
+      "vulnerable": "unchecked_url_forwarded",
+      "hardened": "destination_not_allowed"
+    },
+    "shell-metacharacter-output-name": {
+      "vulnerable": "shell_string_constructed",
+      "hardened": "unsafe_output_name"
+    },
+    "tool-output-reinjection": {
+      "vulnerable": "tool_output_promoted_to_instruction",
+      "hardened": "tool_output_kept_untrusted"
+    }
+  },
+  "manual_review": {
+    "reviewed_path_evaluations": 10,
+    "reviewed_in_memory_sink_events": 5,
+    "raw_arguments_published": false,
+    "tool_output_text_published": false,
+    "offline_boundary_confirmed": true
+  },
+  "prediction": {
+    "registered_scope": "strict shape, destination policy, sink adapter, and tool-output trust",
+    "matched_cases": 5,
+    "total_cases": 5,
+    "result": "supported"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "package_lock": "uv.lock",
+  "declared_mcp_config_paths": [
+    ".mcp.json",
+    "mcp.json",
+    "config/mcp.json"
+  ]
+}

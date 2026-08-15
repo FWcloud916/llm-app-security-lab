@@ -1,0 +1,162 @@
+[
+  {
+    "id": "model-complete-evidence",
+    "component": "model",
+    "evidence": {
+      "immutable_ref": "sha256:model-safe-v1",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "provenance": "verified-builder-record",
+      "format": "safetensors",
+      "remote_code": false,
+      "hash_matches": true
+    },
+    "expected": {
+      "decision": "allow",
+      "reason_code": "evidence_and_capabilities_accepted",
+      "missing_evidence": []
+    }
+  },
+  {
+    "id": "model-mutable-no-digest",
+    "component": "model",
+    "evidence": {
+      "provenance": "publisher-page-only",
+      "format": "safetensors",
+      "remote_code": false,
+      "hash_matches": true
+    },
+    "expected": {
+      "decision": "review",
+      "reason_code": "required_evidence_missing",
+      "missing_evidence": ["immutable_ref", "sha256"]
+    }
+  },
+  {
+    "id": "model-signed-pickle",
+    "component": "model",
+    "evidence": {
+      "immutable_ref": "sha256:model-pickle-v1",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "provenance": "signed-publisher-commit",
+      "format": "pickle",
+      "remote_code": false,
+      "hash_matches": true
+    },
+    "expected": {
+      "decision": "block",
+      "reason_code": "unsafe_model_format",
+      "missing_evidence": []
+    }
+  },
+  {
+    "id": "package-complete-evidence",
+    "component": "package",
+    "evidence": {
+      "immutable_ref": "package==1.2.3",
+      "exact_version": "1.2.3",
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "provenance": "verified-build-provenance",
+      "hash_matches": true
+    },
+    "expected": {
+      "decision": "allow",
+      "reason_code": "evidence_and_capabilities_accepted",
+      "missing_evidence": []
+    }
+  },
+  {
+    "id": "package-missing-provenance",
+    "component": "package",
+    "evidence": {
+      "immutable_ref": "package==2.0.0",
+      "exact_version": "2.0.0",
+      "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "hash_matches": true
+    },
+    "expected": {
+      "decision": "review",
+      "reason_code": "required_evidence_missing",
+      "missing_evidence": ["provenance"]
+    }
+  },
+  {
+    "id": "package-hash-mismatch",
+    "component": "package",
+    "evidence": {
+      "immutable_ref": "package==3.0.0",
+      "exact_version": "3.0.0",
+      "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "provenance": "verified-build-provenance",
+      "hash_matches": false
+    },
+    "expected": {
+      "decision": "block",
+      "reason_code": "artifact_hash_mismatch",
+      "missing_evidence": []
+    }
+  },
+  {
+    "id": "mcp-complete-declaration",
+    "component": "mcp",
+    "evidence": {
+      "immutable_ref": "mcp-server@sha256:release-v1",
+      "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "provenance": "verified-release-provenance",
+      "tool_snapshot_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "filesystem_roots": ["/synthetic/workspace"],
+      "outbound_hosts": ["api.example.test"],
+      "secret_env_names": ["SYNTHETIC_API_TOKEN"],
+      "token_passthrough": false,
+      "capability_drift": false,
+      "hash_matches": true
+    },
+    "expected": {
+      "decision": "allow",
+      "reason_code": "evidence_and_capabilities_accepted",
+      "missing_evidence": []
+    }
+  },
+  {
+    "id": "mcp-annotations-only",
+    "component": "mcp",
+    "evidence": {
+      "tool_annotations": true,
+      "hash_matches": true
+    },
+    "expected": {
+      "decision": "review",
+      "reason_code": "tool_annotations_only",
+      "missing_evidence": [
+        "filesystem_roots",
+        "immutable_ref",
+        "outbound_hosts",
+        "provenance",
+        "secret_env_names",
+        "sha256",
+        "token_passthrough",
+        "tool_snapshot_sha256"
+      ]
+    }
+  },
+  {
+    "id": "mcp-capability-drift",
+    "component": "mcp",
+    "evidence": {
+      "immutable_ref": "mcp-server@sha256:release-v2",
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "provenance": "verified-release-provenance",
+      "tool_snapshot_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "filesystem_roots": ["/synthetic/workspace", "/synthetic/private"],
+      "outbound_hosts": ["api.example.test", "upload.example.test"],
+      "secret_env_names": ["SYNTHETIC_API_TOKEN"],
+      "token_passthrough": false,
+      "capability_drift": ["filesystem_roots", "outbound_hosts"],
+      "hash_matches": true
+    },
+    "expected": {
+      "decision": "block",
+      "reason_code": "mcp_capability_drift",
+      "missing_evidence": []
+    }
+  }
+]

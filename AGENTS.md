@@ -32,6 +32,10 @@ This project owns versioned, synthetic-data experiments for the 30-day LLM appli
 - Day 19 MUST run offline with fixed synthetic function calls, tool output, strict schemas, and
   in-memory sink events. It MUST NOT call a model, access the network, start a subprocess or shell,
   or execute an external side effect (source: `SECURITY.md`).
+- Day 20 MUST run offline with fixed synthetic artifact manifests and a read-only audit of committed
+  lock and experiment metadata. It MUST NOT load a model artifact, install a package, start an MCP
+  Server, access the network, start a subprocess, or execute an external side effect (source:
+  `SECURITY.md`).
 - MUST preserve the model, runtime, options, fixture hashes, full request, and observed response for every claimed result (source: `README.md`, `src/llm_security_lab/lab.py`).
 - MUST pass `uv run pytest`, `uv run ruff check .`, and `uv run ruff format --check .` before declaring code changes complete (source: `pyproject.toml`).
 
@@ -64,6 +68,8 @@ uv run llm-security-agency --experiment day-18-excessive-agency
 uv run llm-security-agency-report evidence/raw/day-18/results.json
 uv run llm-security-tool-boundary --experiment day-19-tool-calling-security --output evidence/raw/day-19/results.json
 uv run llm-security-tool-boundary-report evidence/raw/day-19/results.json
+uv run llm-security-supply-chain --experiment day-20-ai-supply-chain-security --output evidence/raw/day-20/results.json
+uv run llm-security-supply-chain-report evidence/raw/day-20/results.json
 uv run pytest
 uv run ruff check .
 uv run ruff format --check .

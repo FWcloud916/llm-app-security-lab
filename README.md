@@ -14,6 +14,9 @@ A versioned, synthetic-data lab for reproducing the LLM application-security exp
   without a model, network call, mailbox, or payment service.
 - Runs the Day 19 deterministic tool-boundary bundle with synthetic function calls and tool output,
   without a model, network call, subprocess, shell, or external side effect.
+- Runs the Day 20 deterministic supply-chain intake bundle against synthetic artifact manifests and
+  a read-only repository audit, without loading models, installing packages, starting MCP Servers,
+  accessing the network, or starting subprocesses.
 - Preserves stable milestone tags so an article can point to the exact code it described.
 
 ## Quickstart
@@ -253,6 +256,18 @@ uv run llm-security-tool-boundary \
   --experiment day-19-tool-calling-security \
   --output evidence/raw/day-19/results.json
 uv run llm-security-tool-boundary-report evidence/raw/day-19/results.json
+```
+
+The Day 20 experiment first audits committed package-lock and model-reference metadata, then applies
+one fixed `ALLOW / REVIEW / BLOCK` policy to nine synthetic model, package, and MCP Server manifests.
+It records evidence gaps and capability drift without downloading, importing, or executing any
+candidate component.
+
+```bash
+uv run llm-security-supply-chain \
+  --experiment day-20-ai-supply-chain-security \
+  --output evidence/raw/day-20/results.json
+uv run llm-security-supply-chain-report evidence/raw/day-20/results.json
 ```
 
 Schema-v3 scenarios may declare an optional `tools` array containing Ollama function definitions.

@@ -44,6 +44,11 @@ This repository contains deliberately vulnerable LLM application-security experi
   record an unchecked destination or would-be shell string, but MUST NOT call a model, access the
   network, start a subprocess or shell, create the proposed file, dispatch a returned instruction,
   or execute an external side effect.
+- The Day 20 supply-chain bundle MUST use only fixed synthetic artifact manifests and read-only
+  inspection of committed `uv.lock` and experiment definitions. It MAY record hashes, counts, and
+  declared paths, but MUST NOT load a model artifact, install or import a candidate package, start
+  an MCP Server, access the network, start a subprocess, read credentials, or execute an external
+  side effect.
 - The Day 6 authority bundle MUST use only structured synthetic fixtures and MUST NOT call Ollama,
   access the network, read resource content, or execute a downstream action.
 - MUST keep raw evidence under `evidence/raw/` or `results/`; both paths are ignored by Git.
@@ -54,7 +59,8 @@ but are not an operating-system or container sandbox. The Day 6 evaluator is an 
 prototype, not a production authentication or authorization service. The Day 18 evaluator is an
 offline control-flow prototype, not a production mail, approval, or policy service. The Day 19
 evaluator is an offline data-flow prototype, not a production URL fetcher, process runner, tool
-dispatcher, or SSRF defense.
+dispatcher, or SSRF defense. The Day 20 evaluator is an offline intake-policy prototype, not a
+malware scanner, signature verifier, package installer, model loader, MCP client, or sandbox.
 Run experiments on a machine and account that contain no data the selected model should not see.
 
 ## Reporting a problem

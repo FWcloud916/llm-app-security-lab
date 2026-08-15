@@ -35,6 +35,8 @@ artifacts and their verification.
   downstream permission, advisory risk, exact approval, and in-memory side-effect gates.
 - Day 19 does not call a model. It compares fixed synthetic function calls and tool output through
   vulnerable and hardened schema, policy, sink-adapter, and output-trust paths.
+- Day 20 does not call a model or execute candidate components. It audits committed lock and model
+  metadata, then evaluates fixed synthetic model, package, and MCP Server manifests.
 - The model artifact is not distributed through this repository.
 
 ## 2. Tech Stack
@@ -96,6 +98,14 @@ Day 19 fixed synthetic function call or tool output
     ├─► sink-safe adapter
     ├─► tool-output trust classification
     └─► in-memory sink-event ledger
+
+Day 20 committed metadata + fixed synthetic manifests
+    │
+    ├─► read-only package-lock and model-reference audit
+    ├─► immutable identity + hash + provenance gates
+    ├─► model format and remote-code gate
+    ├─► MCP capability and token-passthrough gate
+    └─► ALLOW / REVIEW / BLOCK evidence
 ```
 
 ### Key Principles
@@ -118,6 +128,8 @@ Day 19 fixed synthetic function call or tool output
   approval mode determine whether an in-memory synthetic side effect occurs.
 - Day 19 treats schema-valid strings and tool output as untrusted. Structural validation never
   grants destination authority or sink safety, and tool output never gains dispatch authority.
+- Day 20 treats a familiar name, signature, or tool annotation as incomplete evidence. Identity,
+  integrity, provenance, executable format, and runtime capability are evaluated separately.
 
 ## 4. Directory Structure
 
@@ -127,6 +139,7 @@ Day 19 fixed synthetic function call or tool output
 │   ├── cli.py                 # Experiment selection, repetition or fixed plans, and raw JSON output
 │   ├── agency.py              # Offline Excessive Agency control-flow matrix and report
 │   ├── tool_boundary.py       # Offline function-call and tool-output boundary matrix and report
+│   ├── supply_chain.py        # Offline artifact-intake matrix and repository metadata audit
 │   ├── lab.py                 # Bundle, fixture, digest, request, and evidence flow
 │   ├── knowledge_base.py      # Synthetic publish/revoke/rebuild lifecycle replay
 │   ├── report.py              # Sanitized repeated-run summary
@@ -170,6 +183,8 @@ llm-security-agency --experiment day-18-excessive-agency
 llm-security-agency-report <raw-json>
 llm-security-tool-boundary --experiment day-19-tool-calling-security [--output <raw-json>]
 llm-security-tool-boundary-report <raw-json>
+llm-security-supply-chain --experiment day-20-ai-supply-chain-security [--output <raw-json>]
+llm-security-supply-chain-report <raw-json>
 ```
 
 The legacy command defaults to `day-04-vulnerable-baseline`. A schema-v2 experiment selects one
@@ -189,7 +204,9 @@ exit status 1. The authority runner executes the complete fixed case matrix
 once, evaluates proposals against synthetic trusted application state and policy, and its reporter
 verifies expected decisions and event counts without printing raw model output or identity fixtures.
 The tool-boundary runner executes one fixed vulnerable/hardened matrix, records only in-memory sink
-events, and its reporter omits raw arguments and synthetic tool-output text.
+events, and its reporter omits raw arguments and synthetic tool-output text. The supply-chain runner
+performs a read-only repository metadata audit and evaluates one fixed nine-case manifest matrix;
+its reporter omits raw artifact identifiers and declared capability values.
 
 Day 15 adds a mutually exclusive scenario-level `retrieval` object. A retrieval scenario declares
 one `user_request`, 1–20 synthetic Markdown documents, `paragraph-v1` chunking,
@@ -225,6 +242,7 @@ N/A — the project has no worker, queue, scheduler, daemon, or recurring task.
 | Day 6 authority runner | `src/llm_security_lab/authority.py` | Offline deterministic evaluator; no network or model |
 | Day 18 agency runner | `src/llm_security_lab/agency.py` | Offline deterministic evaluator; synthetic in-memory side effects only |
 | Day 19 tool-boundary runner | `src/llm_security_lab/tool_boundary.py` | Offline deterministic evaluator; no model, network, subprocess, shell, or external side effect |
+| Day 20 supply-chain runner | `src/llm_security_lab/supply_chain.py` | Offline deterministic evaluator and read-only metadata audit; no artifact load, install, MCP start, network, subprocess, or external side effect |
 | Qdrant local mode | `src/llm_security_lab/vector_retrieval.py` | Process-local `:memory:` collection; no server, persistence, or outbound call |
 
 The Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, Day 14, Day 15, Day 16, and Day 17

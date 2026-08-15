@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "version": "day20-intake-v1",
+  "model": {
+    "allowed_formats": ["safetensors"]
+  },
+  "mcp": {
+    "required_capability_fields": [
+      "tool_snapshot_sha256",
+      "filesystem_roots",
+      "outbound_hosts",
+      "secret_env_names",
+      "token_passthrough"
+    ]
+  }
+}

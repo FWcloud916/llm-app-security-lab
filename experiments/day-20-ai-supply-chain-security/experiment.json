@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "id": "day-20-ai-supply-chain-security",
+  "runner": "deterministic_supply_chain_intake",
+  "repository_audit": "repository-audit.json",
+  "policy": "policy.json",
+  "cases": "cases.json"
+}

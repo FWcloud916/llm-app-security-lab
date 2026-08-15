@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "id": "day-19-tool-calling-security",
+  "runner": "deterministic_tool_boundary",
+  "tool_schema": "tool-schema.json",
+  "policy": "policy.json",
+  "cases": "cases.json"
+}

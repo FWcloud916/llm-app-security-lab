@@ -12,6 +12,8 @@ A versioned, synthetic-data lab for reproducing the LLM application-security exp
 - Runs the Day 6 deterministic authority-boundary bundle without a model or network call.
 - Runs the Day 18 deterministic agency bundle with synthetic proposals and in-memory side effects,
   without a model, network call, mailbox, or payment service.
+- Runs the Day 19 deterministic tool-boundary bundle with synthetic function calls and tool output,
+  without a model, network call, subprocess, shell, or external side effect.
 - Preserves stable milestone tags so an article can point to the exact code it described.
 
 ## Quickstart
@@ -240,6 +242,19 @@ uv run llm-security-agency \
 uv run llm-security-agency-report evidence/raw/day-18/results.json
 ```
 
+The Day 19 experiment compares the same five synthetic inputs through deliberately vulnerable and
+hardened application paths. It separates strict schema validation, destination policy, sink-safe
+argument handling, and tool-output trust. Vulnerable sinks are only recorded as in-memory events;
+the runner never fetches a URL, starts a process, creates the proposed file, or dispatches a tool
+instruction.
+
+```bash
+uv run llm-security-tool-boundary \
+  --experiment day-19-tool-calling-security \
+  --output evidence/raw/day-19/results.json
+uv run llm-security-tool-boundary-report evidence/raw/day-19/results.json
+```
+
 Schema-v3 scenarios may declare an optional `tools` array containing Ollama function definitions.
 The runner records those definitions in the request and evidence but has no function dispatcher: it
 never executes a returned tool call or sends a tool-result message. Ollama's native chat roles do not
@@ -286,7 +301,7 @@ The test suite does not call a model or the network.
 ## Project structure
 
 ```text
-src/          Generic runner, deterministic authority/agency runners, reporters, Ollama client, and CLIs
+src/          Generic runner, deterministic authority/agency/tool-boundary runners, reporters, and CLIs
 experiments/  Independent definitions and synthetic fixture bundles
 evidence/     Sanitized experiment checkpoints; raw runs stay ignored
 tests/        Offline unit tests

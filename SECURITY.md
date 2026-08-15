@@ -39,6 +39,11 @@ This repository contains deliberately vulnerable LLM application-security experi
   envelopes, mail addresses under `.test`, and an in-memory side-effect ledger. It MUST NOT call a
   model, access the network, connect to a real mailbox or payment system, or execute an external
   side effect. Its keyword findings are advisory experiment signals, not authorization decisions.
+- The Day 19 tool-boundary bundle MUST use only fixed synthetic function calls, strict schemas,
+  URL and output-name policies, tool output, and in-memory sink events. Its vulnerable path MAY
+  record an unchecked destination or would-be shell string, but MUST NOT call a model, access the
+  network, start a subprocess or shell, create the proposed file, dispatch a returned instruction,
+  or execute an external side effect.
 - The Day 6 authority bundle MUST use only structured synthetic fixtures and MUST NOT call Ollama,
   access the network, read resource content, or execute a downstream action.
 - MUST keep raw evidence under `evidence/raw/` or `results/`; both paths are ignored by Git.
@@ -47,7 +52,9 @@ The Day 2, Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, Da
 Day 16, and Day 17 experiments reduce the blast radius
 but are not an operating-system or container sandbox. The Day 6 evaluator is an offline policy
 prototype, not a production authentication or authorization service. The Day 18 evaluator is an
-offline control-flow prototype, not a production mail, approval, or policy service.
+offline control-flow prototype, not a production mail, approval, or policy service. The Day 19
+evaluator is an offline data-flow prototype, not a production URL fetcher, process runner, tool
+dispatcher, or SSRF defense.
 Run experiments on a machine and account that contain no data the selected model should not see.
 
 ## Reporting a problem

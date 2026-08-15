@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "tools": {
+    "fetch_url": {
+      "properties": {
+        "url": { "type": "string" }
+      },
+      "required": ["url"],
+      "additional_properties": false
+    },
+    "render_report": {
+      "properties": {
+        "template": { "type": "string" },
+        "output_name": { "type": "string" }
+      },
+      "required": ["template", "output_name"],
+      "additional_properties": false
+    }
+  }
+}

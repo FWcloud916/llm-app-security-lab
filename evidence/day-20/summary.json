@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "experiment_id": "day-20-ai-supply-chain-security",
+  "runner": "deterministic_supply_chain_intake",
+  "runner_commit": "04800e0",
+  "raw_sha256": "74b7ace3cc9802d0acd73d30382667fc35158924662517589b035f98b55c4c40",
+  "recorded_at": "2026-08-15T15:41:33.375598+00:00",
+  "fixtures": {
+    "repository_audit_sha256": "485c65fdff695b4c1ea959d4495f4335b3112699bfe061274a203a39e44976a2",
+    "policy_sha256": "89d65cde51b4fec1ef65a2eec2e39713f7e64f189f692c7f4f11b9a44627e0ef",
+    "cases_sha256": "53ca2afc2de7291eb20bd54ebef3c00c45945df4cb6c86b61bbf6848796c5ffa"
+  },
+  "repository_audit": {
+    "python_packages": {
+      "state": "review",
+      "reason_code": "package_provenance_not_recorded",
+      "locked_packages": 32,
+      "artifact_hashes": 436,
+      "build_provenance_recorded": false
+    },
+    "model_references": {
+      "state": "review",
+      "reason_code": "model_origin_not_recorded",
+      "references": 15,
+      "unique_name_digest_pairs": 2,
+      "all_references_have_full_digest": true,
+      "artifact_format_recorded": false,
+      "signature_or_provenance_recorded": false
+    },
+    "mcp_servers": {
+      "state": "not_configured",
+      "reason_code": "no_declared_mcp_configuration",
+      "checked_paths": 3,
+      "present_paths": 0
+    }
+  },
+  "summary": {
+    "cases": 9,
+    "matched_expected": 9,
+    "allow": 3,
+    "review": 3,
+    "block": 3,
+    "models": 3,
+    "packages": 3,
+    "mcp_servers": 3,
+    "model_calls": 0,
+    "network_calls": 0,
+    "package_installs": 0,
+    "artifact_loads": 0,
+    "mcp_server_starts": 0,
+    "subprocess_calls": 0,
+    "external_side_effects": 0
+  },
+  "cases": {
+    "model-complete-evidence": "evidence_and_capabilities_accepted",
+    "model-mutable-no-digest": "required_evidence_missing",
+    "model-signed-pickle": "unsafe_model_format",
+    "package-complete-evidence": "evidence_and_capabilities_accepted",
+    "package-missing-provenance": "required_evidence_missing",
+    "package-hash-mismatch": "artifact_hash_mismatch",
+    "mcp-complete-declaration": "evidence_and_capabilities_accepted",
+    "mcp-annotations-only": "tool_annotations_only",
+    "mcp-capability-drift": "mcp_capability_drift"
+  },
+  "manual_review": {
+    "reviewed_cases": 9,
+    "repository_components_reviewed": 3,
+    "raw_artifact_values_published": false,
+    "offline_boundary_confirmed": true
+  },
+  "prediction": {
+    "registered_scope": "identity, integrity, provenance, executable format, and runtime capability",
+    "matched_cases": 9,
+    "total_cases": 9,
+    "result": "supported"
+  }
+}

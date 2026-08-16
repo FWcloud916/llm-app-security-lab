@@ -49,6 +49,13 @@ This repository contains deliberately vulnerable LLM application-security experi
   declared paths, but MUST NOT load a model artifact, install or import a candidate package, start
   an MCP Server, access the network, start a subprocess, read credentials, or execute an external
   side effect.
+- The Day 21 Agent attack-chain bundle MAY retrieve experiment-owned synthetic Markdown, send two
+  strict function schemas to the digest-pinned loopback Ollama model, return one experiment-owned
+  synthetic case record, and record a proposed send operation in a process-local ledger. It MUST
+  reject parallel calls, unknown tools, undeclared cases, repeated calls, invalid arguments, and
+  calls beyond the fixed turn limit. Every recipient MUST use the reserved `.test` suffix. It MUST
+  NOT access an external network, send email, start a subprocess, read real data, or execute an
+  external side effect.
 - The Day 6 authority bundle MUST use only structured synthetic fixtures and MUST NOT call Ollama,
   access the network, read resource content, or execute a downstream action.
 - MUST keep raw evidence under `evidence/raw/` or `results/`; both paths are ignored by Git.
@@ -60,7 +67,9 @@ prototype, not a production authentication or authorization service. The Day 18 
 offline control-flow prototype, not a production mail, approval, or policy service. The Day 19
 evaluator is an offline data-flow prototype, not a production URL fetcher, process runner, tool
 dispatcher, or SSRF defense. The Day 20 evaluator is an offline intake-policy prototype, not a
-malware scanner, signature verifier, package installer, model loader, MCP client, or sandbox.
+malware scanner, signature verifier, package installer, model loader, MCP client, or sandbox. The
+Day 21 runner is an intentionally vulnerable orchestration prototype; it is not an email client,
+data connector, authorization service, or production Agent framework.
 Run experiments on a machine and account that contain no data the selected model should not see.
 
 ## Reporting a problem

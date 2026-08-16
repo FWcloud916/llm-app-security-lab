@@ -2,7 +2,7 @@
 
 > **Type:** Explanation
 > **Audience:** Developers, AI assistants, and any tooling that needs project context
-> **Last updated:** 2026-08-15
+> **Last updated:** 2026-08-16
 >
 > A versioned, synthetic-data lab whose independent experiment bundles support the 30-day LLM
 > application-security series.
@@ -37,6 +37,9 @@ artifacts and their verification.
   vulnerable and hardened schema, policy, sink-adapter, and output-trust paths.
 - Day 20 does not call a model or execute candidate components. It audits committed lock and model
   metadata, then evaluates fixed synthetic model, package, and MCP Server manifests.
+- Day 21 is an intentionally vulnerable hybrid orchestration experiment. It performs deterministic
+  retrieval, sends two strict native tool definitions to digest-pinned loopback Ollama, and records
+  both tool effects in memory without external communication.
 - The model artifact is not distributed through this repository.
 
 ## 2. Tech Stack
@@ -106,6 +109,13 @@ Day 20 committed metadata + fixed synthetic manifests
     ├─► model format and remote-code gate
     ├─► MCP capability and token-passthrough gate
     └─► ALLOW / REVIEW / BLOCK evidence
+
+Day 21 synthetic RAG context + loopback Ollama
+    │
+    ├─► deterministic Top-1 retrieval
+    ├─► native read_case_record proposal ──► synthetic record in memory
+    ├─► native send_case_summary proposal ──► in-memory sink ledger
+    └─► source / retrieval / tool / destination control matrix
 ```
 
 ### Key Principles
@@ -130,6 +140,9 @@ Day 20 committed metadata + fixed synthetic manifests
   grants destination authority or sink safety, and tool output never gains dispatch authority.
 - Day 20 treats a familiar name, signature, or tool annotation as incomplete evidence. Identity,
   integrity, provenance, executable format, and runtime capability are evaluated separately.
+- Day 21 preserves model variability and deterministic controls as separate evidence. Native tool
+  calls are executed only by exact experiment-owned in-memory adapters; parallel, repeated,
+  unknown, malformed, or over-limit calls fail closed.
 
 ## 4. Directory Structure
 
@@ -140,6 +153,7 @@ Day 20 committed metadata + fixed synthetic manifests
 │   ├── agency.py              # Offline Excessive Agency control-flow matrix and report
 │   ├── tool_boundary.py       # Offline function-call and tool-output boundary matrix and report
 │   ├── supply_chain.py        # Offline artifact-intake matrix and repository metadata audit
+│   ├── agent_chain.py         # Hybrid Agent tool loop and deterministic cut-point matrix
 │   ├── lab.py                 # Bundle, fixture, digest, request, and evidence flow
 │   ├── knowledge_base.py      # Synthetic publish/revoke/rebuild lifecycle replay
 │   ├── report.py              # Sanitized repeated-run summary
@@ -185,6 +199,8 @@ llm-security-tool-boundary --experiment day-19-tool-calling-security [--output <
 llm-security-tool-boundary-report <raw-json>
 llm-security-supply-chain --experiment day-20-ai-supply-chain-security [--output <raw-json>]
 llm-security-supply-chain-report <raw-json>
+llm-security-agent-chain --experiment day-21-end-to-end-agent-attack-chain [--output <raw-json>]
+llm-security-agent-chain-report <raw-json>
 ```
 
 The legacy command defaults to `day-04-vulnerable-baseline`. A schema-v2 experiment selects one
@@ -207,6 +223,10 @@ The tool-boundary runner executes one fixed vulnerable/hardened matrix, records 
 events, and its reporter omits raw arguments and synthetic tool-output text. The supply-chain runner
 performs a read-only repository metadata audit and evaluates one fixed nine-case manifest matrix;
 its reporter omits raw artifact identifiers and declared capability values.
+The Agent-chain runner executes ten digest-pinned model runs across clean and poisoned retrieval,
+permits only one native tool call per turn, and evaluates one five-case deterministic cut-point
+matrix. Its reporter omits retrieved text, model responses, synthetic records, tool arguments, and
+recipient values.
 
 Day 15 adds a mutually exclusive scenario-level `retrieval` object. A retrieval scenario declares
 one `user_request`, 1–20 synthetic Markdown documents, `paragraph-v1` chunking,
@@ -243,6 +263,7 @@ N/A — the project has no worker, queue, scheduler, daemon, or recurring task.
 | Day 18 agency runner | `src/llm_security_lab/agency.py` | Offline deterministic evaluator; synthetic in-memory side effects only |
 | Day 19 tool-boundary runner | `src/llm_security_lab/tool_boundary.py` | Offline deterministic evaluator; no model, network, subprocess, shell, or external side effect |
 | Day 20 supply-chain runner | `src/llm_security_lab/supply_chain.py` | Offline deterministic evaluator and read-only metadata audit; no artifact load, install, MCP start, network, subprocess, or external side effect |
+| Day 21 Agent-chain runner | `src/llm_security_lab/agent_chain.py` | Loopback Ollama plus deterministic retrieval and two strict in-memory synthetic tool adapters; no external network, subprocess, email, or external side effect |
 | Qdrant local mode | `src/llm_security_lab/vector_retrieval.py` | Process-local `:memory:` collection; no server, persistence, or outbound call |
 
 The Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, Day 14, Day 15, Day 16, and Day 17
@@ -286,6 +307,10 @@ The chat and embedding tags are each checked against their configured full diges
 Day 19 has no external integration. The vulnerable path records unchecked destinations and
 would-be shell strings as in-memory event metadata; the hardened path applies strict field checks,
 exact origin and template allowlists, output-name validation, and untrusted tool-output labeling.
+Day 21 calls the same loopback `/api/version`, `/api/tags`, and `/api/chat` endpoints. The model may
+propose `read_case_record` and `send_case_summary`; exact adapters return one experiment-owned JSON
+record or append one process-local ledger event. No socket, mailbox, subprocess, file output, or
+external service backs either tool.
 
 ## 9. Database / Data Stores
 

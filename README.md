@@ -17,6 +17,8 @@ A versioned, synthetic-data lab for reproducing the LLM application-security exp
 - Runs the Day 20 deterministic supply-chain intake bundle against synthetic artifact manifests and
   a read-only repository audit, without loading models, installing packages, starting MCP Servers,
   accessing the network, or starting subprocesses.
+- Runs the Day 21 hybrid Agent attack-chain bundle with deterministic retrieval, digest-pinned
+  loopback tool calls, and process-local synthetic tool effects; no external message is sent.
 - Preserves stable milestone tags so an article can point to the exact code it described.
 
 ## Quickstart
@@ -268,6 +270,18 @@ uv run llm-security-supply-chain \
   --experiment day-20-ai-supply-chain-security \
   --output evidence/raw/day-20/results.json
 uv run llm-security-supply-chain-report evidence/raw/day-20/results.json
+```
+
+The Day 21 experiment compares five clean and five poisoned retrieval runs. The deliberately
+vulnerable model loop may read one experiment-owned synthetic case and record a proposed send in an
+in-memory ledger. A separate fixed matrix shows where source review, retrieval authority, the tool
+allowlist, and destination/data policy cut the same path.
+
+```bash
+uv run llm-security-agent-chain \
+  --experiment day-21-end-to-end-agent-attack-chain \
+  --output evidence/raw/day-21/results.json
+uv run llm-security-agent-chain-report evidence/raw/day-21/results.json
 ```
 
 Schema-v3 scenarios may declare an optional `tools` array containing Ollama function definitions.

@@ -1,0 +1,23 @@
+[
+  {"id": "vulnerable", "enabled_gate": null, "expected": "synthetic_sink_reached"},
+  {
+    "id": "source-review",
+    "enabled_gate": "source_review",
+    "expected": "blocked_source_review"
+  },
+  {
+    "id": "retrieval-authority",
+    "enabled_gate": "retrieval_authority",
+    "expected": "blocked_retrieval_authority"
+  },
+  {
+    "id": "tool-allowlist",
+    "enabled_gate": "tool_allowlist",
+    "expected": "blocked_tool_allowlist"
+  },
+  {
+    "id": "destination-data-policy",
+    "enabled_gate": "destination_data_policy",
+    "expected": "blocked_destination_data_policy"
+  }
+]

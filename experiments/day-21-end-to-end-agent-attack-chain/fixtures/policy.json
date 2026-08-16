@@ -1,0 +1,7 @@
+{
+  "version": "day21-policy-v1",
+  "approved_sources": ["knowledge-base/01-public-procedure.md"],
+  "authorized_retrieval_sources": ["knowledge-base/01-public-procedure.md"],
+  "task_tools": ["read_case_record"],
+  "allowed_recipients": ["reviewer@internal.test"]
+}

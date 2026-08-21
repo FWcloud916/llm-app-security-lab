@@ -2,7 +2,7 @@
 
 > **Type:** Explanation
 > **Audience:** Developers, AI assistants, and any tooling that needs project context
-> **Last updated:** 2026-08-16
+> **Last updated:** 2026-08-21
 >
 > A versioned, synthetic-data lab whose independent experiment bundles support the 30-day LLM
 > application-security series.
@@ -40,6 +40,9 @@ artifacts and their verification.
 - Day 21 is an intentionally vulnerable hybrid orchestration experiment. It performs deterministic
   retrieval, sends two strict native tool definitions to digest-pinned loopback Ollama, and records
   both tool effects in memory without external communication.
+- Day 22 pairs the complete Day 14 matrix across the legacy serializer and a strict task-specific
+  input contract with canonical JSON. Both paths remain loopback-only and have no OCR, tools,
+  actions, or external sink.
 - The model artifact is not distributed through this repository.
 
 ## 2. Tech Stack
@@ -311,6 +314,11 @@ Day 21 calls the same loopback `/api/version`, `/api/tags`, and `/api/chat` endp
 propose `read_case_record` and `send_case_summary`; exact adapters return one experiment-owned JSON
 record or append one process-local ledger event. No socket, mailbox, subprocess, file output, or
 external service backs either tool.
+Day 22 adds an optional scenario-level `input_boundary` version 1 to the normal schema-v3
+note/target/image path. The runner validates application-owned task identity, bounded text and PNG
+metadata, serializes provenance-labeled content as canonical JSON, and binds each admission decision
+to the exact user-message SHA-256. Baseline and defended pairs own identical fixture bytes and
+sampling options; JSON labels reduce structural ambiguity but do not enforce model obedience.
 
 ## 9. Database / Data Stores
 

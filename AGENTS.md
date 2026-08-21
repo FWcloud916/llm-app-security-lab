@@ -40,6 +40,10 @@ This project owns versioned, synthetic-data experiments for the 30-day LLM appli
   experiment-owned synthetic tools. It MUST reject parallel or unknown calls, use only `.test`
   recipients, keep every tool effect in memory, and MUST NOT access an external network, start a
   subprocess, or execute an external side effect (source: `SECURITY.md`).
+- Day 22 MAY compare the complete Day 14 matrix through baseline and validated canonical-JSON
+  input paths. It MUST keep task identity application-owned, use only bundle-owned synthetic
+  fixtures, keep Ollama on loopback, and MUST NOT add OCR, tools, downstream actions, or an external
+  sink (source: `SECURITY.md`).
 - MUST preserve the model, runtime, options, fixture hashes, full request, and observed response for every claimed result (source: `README.md`, `src/llm_security_lab/lab.py`).
 - MUST pass `uv run pytest`, `uv run ruff check .`, and `uv run ruff format --check .` before declaring code changes complete (source: `pyproject.toml`).
 
@@ -65,6 +69,7 @@ uv run llm-security-lab --experiment day-14-injection-assessment --run-plan
 uv run llm-security-lab --experiment day-15-rag-attack-surface --run-plan
 uv run llm-security-lab --experiment day-16-data-poisoning --run-plan
 uv run llm-security-lab --experiment day-17-vector-embedding-security --run-plan
+uv run llm-security-lab --experiment day-22-input-defense-isolation-validation --run-plan
 uv run llm-security-report evidence/raw/day-05/clean.json
 uv run llm-security-authority --experiment day-06-authority-boundary
 uv run llm-security-authority-report evidence/raw/day-06/results.json

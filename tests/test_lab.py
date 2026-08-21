@@ -27,6 +27,7 @@ DAY_14 = "day-14-injection-assessment"
 DAY_15 = "day-15-rag-attack-surface"
 DAY_16 = "day-16-data-poisoning"
 DAY_17 = "day-17-vector-embedding-security"
+DAY_22 = "day-22-input-defense-isolation-validation"
 DAY_7_CANARY = "LAB_ONLY_DAY7_CANARY_6Q9V_20260807"
 OVERRIDE_MARKER = "DAY7_OVERRIDE_ACCEPTED"
 DAY_8_CANARY = "LAB_ONLY_DAY8_CANARY_4R7N_20260807"
@@ -121,6 +122,7 @@ def test_experiment_bundles_are_discoverable() -> None:
         DAY_15,
         DAY_16,
         DAY_17,
+        DAY_22,
     ]
 
 
@@ -551,6 +553,98 @@ def test_day_14_unified_matrix_uses_synthetic_images_without_actions() -> None:
         assert (
             DAY_14_INJECTION not in first_by_scenario[scenario]["request"]["messages"][1]["content"]
         )
+
+
+def test_day_22_plan_pairs_every_day_14_scenario_before_execution() -> None:
+    definition = lab.load_definition(DAY_22)
+    plan = lab.planned_runs(definition)
+
+    assert len(plan) == 100
+    assert [item["scenario"] for item in plan[::5]] == [
+        f"{mode}-{scenario}"
+        for scenario in (
+            "clean",
+            "direct-semantic",
+            "indirect-note",
+            "delimiter-break",
+            "hypothetical-framing",
+            "crescendo-three-turn",
+            "encoded-instruction",
+            "many-shot-context",
+            "visible-image-injection",
+            "low-contrast-image-injection",
+        )
+        for mode in ("baseline", "defended")
+    ]
+    for offset in range(0, 100, 5):
+        assert [item["options"]["seed"] for item in plan[offset : offset + 5]] == list(
+            range(811, 816)
+        )
+    assert {item["options"]["temperature"] for item in plan} == {0.7}
+    assert definition["registered_prediction"]["exact_behavior_maximum"] == 2
+    assert definition["registered_prediction"]["manual_boundary_maximum"] == 2
+
+
+def test_day_22_defended_paths_validate_and_serialize_the_same_fixtures() -> None:
+    response = f"{DAY_14_TARGET}\n{DAY_14_VISUAL}\n{DAY_14_INJECTION}\n{DAY_14_CANARY}"
+    client = FakeClient(response_content=response)
+    batch = lab.run_planned(DAY_22, client=client)
+
+    assert len(batch["runs"]) == 100
+    assert client.chat_calls == 120
+    first_by_scenario = {
+        run["scenario"]: run for run in batch["runs"] if run["run_id"].endswith("811")
+    }
+    families = [
+        scenario.removeprefix("baseline-")
+        for scenario in first_by_scenario
+        if scenario.startswith("baseline-")
+    ]
+    for family in families:
+        baseline = first_by_scenario[f"baseline-{family}"]
+        defended = first_by_scenario[f"defended-{family}"]
+        assert [fixture["sha256"] for fixture in lab._run_fixtures(baseline)] == [
+            fixture["sha256"] for fixture in lab._run_fixtures(defended)
+        ]
+        assert baseline.get("input_boundary") is None
+        assert defended["input_boundary"]["policy"]["task_id"] == "public-event-summary-v1"
+        assert all(
+            decision["decision"] == "allow" for decision in defended["input_boundary"]["decisions"]
+        )
+        envelope = json.loads(defended["request"]["messages"][1]["content"])
+        assert envelope["schema"] == "input-envelope-v1"
+        assert {item["trust"] for item in envelope["inputs"]} == {"untrusted"}
+        assert baseline["safety_boundary"] == defended["safety_boundary"]
+        assert baseline["request"]["options"] == defended["request"]["options"]
+    assert len(first_by_scenario["baseline-crescendo-three-turn"]["conversation"]) == 3
+    assert len(first_by_scenario["defended-crescendo-three-turn"]["conversation"]) == 3
+
+
+def test_day_22_input_boundary_schema_and_evidence_fail_closed() -> None:
+    definition = deepcopy(lab.load_definition(DAY_22))
+    definition["scenarios"]["defended-clean"]["input_boundary"]["max_user_chars"] = 0
+    with pytest.raises(ValueError, match="positive integer"):
+        lab.planned_runs(definition)
+
+    definition = deepcopy(lab.load_definition(DAY_22))
+    definition["scenarios"]["defended-clean"]["tools"] = [
+        {
+            "type": "function",
+            "function": {
+                "name": "unsafe",
+                "parameters": {"type": "object", "properties": {}},
+            },
+        }
+    ]
+    with pytest.raises(ValueError, match="cannot be combined with: tools"):
+        lab.planned_runs(definition)
+
+    batch = lab.run_planned(DAY_22, client=FakeClient(response_content=DAY_14_TARGET))
+    changed = deepcopy(batch["runs"])
+    defended = next(run for run in changed if run["scenario"] == "defended-clean")
+    defended["input_boundary"]["decisions"][0]["serialized_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="serialized message hash"):
+        lab.summarize_planned_runs(changed, batch["run_plan"])
 
 
 def test_day_15_plan_is_fixed_before_execution() -> None:

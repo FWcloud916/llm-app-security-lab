@@ -58,10 +58,16 @@ This repository contains deliberately vulnerable LLM application-security experi
   external side effect.
 - The Day 6 authority bundle MUST use only structured synthetic fixtures and MUST NOT call Ollama,
   access the network, read resource content, or execute a downstream action.
+- The Day 22 input-defense bundle MAY repeat the complete Day 14 synthetic matrix through paired
+  baseline and defended paths. The defended path MAY validate task-specific text, source-count,
+  PNG media, and size limits before serializing an application-owned task ID plus provenance-labeled
+  untrusted inputs as canonical JSON. The bundle MUST NOT treat valid JSON or labels as an
+  authorization boundary, run OCR, add tools, execute downstream actions, or communicate with an
+  external sink.
 - MUST keep raw evidence under `evidence/raw/` or `results/`; both paths are ignored by Git.
 
 The Day 2, Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, Day 14, Day 15,
-Day 16, and Day 17 experiments reduce the blast radius
+Day 16, Day 17, and Day 22 experiments reduce the blast radius
 but are not an operating-system or container sandbox. The Day 6 evaluator is an offline policy
 prototype, not a production authentication or authorization service. The Day 18 evaluator is an
 offline control-flow prototype, not a production mail, approval, or policy service. The Day 19
@@ -69,7 +75,9 @@ evaluator is an offline data-flow prototype, not a production URL fetcher, proce
 dispatcher, or SSRF defense. The Day 20 evaluator is an offline intake-policy prototype, not a
 malware scanner, signature verifier, package installer, model loader, MCP client, or sandbox. The
 Day 21 runner is an intentionally vulnerable orchestration prototype; it is not an email client,
-data connector, authorization service, or production Agent framework.
+data connector, authorization service, or production Agent framework. The Day 22 input boundary is
+a task-specific validation and serialization prototype, not a prompt-injection firewall or an
+instruction/data parser boundary.
 Run experiments on a machine and account that contain no data the selected model should not see.
 
 ## Reporting a problem

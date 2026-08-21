@@ -191,6 +191,21 @@ uv run llm-security-lab \
 uv run llm-security-report evidence/raw/day-14/results.json
 ```
 
+The Day 22 experiment repeats that complete Day 14 matrix through paired baseline and defended
+paths. The defended path validates one application-owned task contract, bounded text and PNG
+inputs, then serializes provenance-labeled untrusted data as canonical JSON. All semantically valid
+attack fixtures still pass admission; the experiment measures whether the changed packaging lowers
+model deviation without claiming that JSON creates an instruction/data security boundary. The
+fixed plan contains 100 run units and 120 loopback chat calls.
+
+```bash
+uv run llm-security-lab \
+  --experiment day-22-input-defense-isolation-validation \
+  --run-plan \
+  --output evidence/raw/day-22/results.json
+uv run llm-security-report evidence/raw/day-22/results.json
+```
+
 The Day 15 experiment adds a deterministic, in-memory RAG trace. It compares a clean corpus, the
 same injection indexed but excluded by `top_k=1`, and the injection selected by `top_k=2`. The
 retriever uses paragraph chunks and ASCII token overlap so corpus, rank, selected context, request,
@@ -306,6 +321,12 @@ documents and tenant IDs, `paragraph-v1` chunking, `ollama-embedding-cosine-v1` 
 `top_k`, an optional tenant filter, and the fixed exact-cosine/Qdrant engine pair. This mode requires
 a pinned `embedding_model`, is mutually exclusive with all other context modes, and fails closed if
 embedding shapes, hashes, model identity, selected IDs, or engine scores disagree.
+
+Schema-v3 scenarios that use the normal note/target/image path may declare `input_boundary` version
+1. The policy owns one server-selected task ID and strict character, source-count, media-type, and
+byte limits. Accepted content is serialized as canonical `input-envelope-v1` JSON with provenance
+and `untrusted` labels; raw fixture bytes remain in the same evidence surfaces. The mode is mutually
+exclusive with documents, retrieval modes, message fixtures, and tools.
 
 The Day 6 authority experiment runs all four synthetic cases without Ollama, network access,
 resource-content reads, or downstream actions:

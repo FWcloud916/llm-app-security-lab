@@ -236,6 +236,22 @@ def render_planned_report(batch: dict[str, Any]) -> str:
                 f"score={item['score']:.8f} | sha256={item['sha256']}"
                 for item in vector_retrieval["qdrant_selected"]
             )
+        input_boundary = scenario_first.get("input_boundary")
+        if input_boundary is not None:
+            policy = input_boundary["policy"]
+            first_decision = input_boundary["decisions"][0]
+            lines.extend(
+                [
+                    "Input boundary:",
+                    f"  version: {policy['version']}",
+                    f"  task id: {policy['task_id']}",
+                    f"  decision: {first_decision['decision']}",
+                    f"  reason code: {first_decision['reason_code']}",
+                    f"  first-turn serialized sha256: {first_decision['serialized_sha256']}",
+                    f"  first-turn source count: {first_decision['source_count']}",
+                    f"  first-turn text chars: {first_decision['text_chars']}",
+                ]
+            )
         lines.append("Per-run observations:")
         predicate_names = tuple(scenario_summary["true_counts"])
         for run in scenario_runs:

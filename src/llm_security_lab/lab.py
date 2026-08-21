@@ -13,6 +13,11 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from llm_security_lab.documents import extract_document, validate_document_spec
+from llm_security_lab.input_boundary import (
+    build_input_boundary_message,
+    input_boundary_evidence_fingerprint,
+    validate_input_boundary,
+)
 from llm_security_lab.knowledge_base import (
     knowledge_base_fingerprint,
     replay_knowledge_base,
@@ -208,6 +213,7 @@ def planned_runs(definition: dict[str, Any]) -> list[dict[str, Any]]:
                 "user_turns",
                 "document",
                 "image",
+                "input_boundary",
                 "tools",
             }.intersection(scenario)
             if incompatible:
@@ -287,6 +293,27 @@ def planned_runs(definition: dict[str, Any]) -> list[dict[str, Any]]:
             and tools is not None
         ):
             raise ValueError(f"planned retrieval scenario {scenario_name} cannot declare tools")
+        input_boundary = scenario.get("input_boundary")
+        if input_boundary is not None:
+            validate_input_boundary(input_boundary)
+            incompatible = {
+                "document",
+                "knowledge_base",
+                "message_fixture",
+                "retrieval",
+                "tools",
+                "vector_retrieval",
+            }.intersection(scenario)
+            if incompatible:
+                fields = ", ".join(sorted(incompatible))
+                raise ValueError(
+                    f"planned input-boundary scenario {scenario_name} cannot be combined with: "
+                    f"{fields}"
+                )
+            if user_request is None and user_turns is None:
+                raise ValueError(
+                    f"planned input-boundary scenario {scenario_name} needs user input"
+                )
         runs = scenario.get("runs")
         if not isinstance(runs, list) or not runs or len(runs) > 20:
             raise ValueError(f"planned scenario {scenario_name} needs between 1 and 20 runs")
@@ -850,8 +877,23 @@ def _run_scenario(
     payload: dict[str, Any] = {}
     response: dict[str, Any] = {}
     tools = validate_tools(scenario_definition.get("tools"))
+    input_boundary = scenario_definition.get("input_boundary")
+    validated_input_boundary = (
+        validate_input_boundary(input_boundary) if input_boundary is not None else None
+    )
+    input_boundary_decisions: list[dict[str, Any]] = []
     for turn_number, user_turn in enumerate(user_turns, start=1):
-        if turn_number == 1 and message_fixture is not None:
+        if validated_input_boundary is not None:
+            user_content, decision = build_input_boundary_message(
+                raw_policy=validated_input_boundary,
+                user_request=user_turn,
+                notes=notes if turn_number == 1 else [],
+                target=target if turn_number == 1 else None,
+                image=image if turn_number == 1 else None,
+                turn=turn_number,
+            )
+            input_boundary_decisions.append(decision)
+        elif turn_number == 1 and message_fixture is not None:
             user_content = message_fixture["content"]
         elif turn_number == 1 and vector_retrieval_trace is not None:
             user_content = build_retrieval_user_message(
@@ -933,6 +975,11 @@ def _run_scenario(
         "request": payload,
         "response": response,
     }
+    if validated_input_boundary is not None:
+        evidence["input_boundary"] = {
+            "policy": validated_input_boundary,
+            "decisions": input_boundary_decisions,
+        }
     if retrieval_trace is not None:
         evidence["retrieval"] = retrieval_trace
     if vector_retrieval_trace is not None:
@@ -1100,6 +1147,10 @@ def summarize_planned_runs(
             raise ValueError(f"planned run {run_id} scenario changed")
         if run_evidence.get("request", {}).get("options") != options:
             raise ValueError(f"planned run {run_id} options changed")
+        input_boundary_evidence_fingerprint(
+            run_evidence.get("input_boundary"),
+            run_evidence.get("request", {}).get("messages", []),
+        )
         conversation = run_evidence.get("conversation")
         if conversation is not None:
             if not isinstance(conversation, list) or len(conversation) < 2:
@@ -1162,6 +1213,10 @@ def summarize_planned_runs(
                         vector_retrieval_fingerprint(item["vector_retrieval"])
                         if "vector_retrieval" in item
                         else None
+                    ),
+                    "input_boundary": input_boundary_evidence_fingerprint(
+                        item.get("input_boundary"),
+                        item.get("request", {}).get("messages", []),
                     ),
                 },
                 ensure_ascii=False,

@@ -10,6 +10,7 @@ readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.11"
 dependencies = [
+    "nemoguardrails>=0.23,<0.24",
     "pypdf>=6,<7",
     "qdrant-client>=1.19.0",
 ]
@@ -29,6 +30,8 @@ llm-security-agent-chain = "llm_security_lab.agent_chain_cli:main"
 llm-security-agent-chain-report = "llm_security_lab.agent_chain_report_cli:main"
 llm-security-output-boundary = "llm_security_lab.output_boundary_cli:main"
 llm-security-output-boundary-report = "llm_security_lab.output_boundary_report_cli:main"
+llm-security-guardrails = "llm_security_lab.guardrails_cli:main"
+llm-security-guardrails-report = "llm_security_lab.guardrails_report_cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/llm_security_lab"]

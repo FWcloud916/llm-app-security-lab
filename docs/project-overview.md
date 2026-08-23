@@ -2,7 +2,7 @@
 
 > **Type:** Explanation
 > **Audience:** Developers, AI assistants, and any tooling that needs project context
-> **Last updated:** 2026-08-23
+> **Last updated:** 2026-08-24
 >
 > A versioned, synthetic-data lab whose independent experiment bundles support the 30-day LLM
 > application-security series.
@@ -47,6 +47,9 @@ artifacts and their verification.
   an intentionally unescaped HTML path and a strict schema, review, authorization, and HTML-text
   path. An inert parser records would-be active markup without launching a browser or making a
   request.
+- Day 24 uses NeMo Guardrails 0.23.x to orchestrate separate semantic and deterministic input,
+  topic, and output rails. Paired runs share one candidate; independent runs short-circuit before
+  generation or before the sink. The Day 23 application boundary remains mandatory.
 - The model artifact is not distributed through this repository.
 
 ## 2. Tech Stack
@@ -210,6 +213,8 @@ llm-security-agent-chain --experiment day-21-end-to-end-agent-attack-chain [--ou
 llm-security-agent-chain-report <raw-json>
 llm-security-output-boundary --experiment day-23-output-defense-safe-rendering [--output <raw-json>]
 llm-security-output-boundary-report <raw-json>
+llm-security-guardrails --experiment day-24-guardrails-in-practice --mode {paired,end-to-end} [--output <raw-json>]
+llm-security-guardrails-report <raw-json>
 ```
 
 The legacy command defaults to `day-04-vulnerable-baseline`. A schema-v2 experiment selects one
@@ -330,6 +335,10 @@ run; application validation still checks exact keys, string types, lengths, and 
 candidate hash is shared by the vulnerable and defended paths. The defended path separately records
 content review, authorization for the `html_text` sink, and context-specific escaping. Its HTML
 oracle parses strings in memory and cannot execute scripts, load resources, or contact a network.
+Day 24 uses a dedicated asynchronous runner. Six small NeMo configurations invoke registered custom
+actions through `check_async()`: three use the digest-pinned loopback model as a strict semantic
+classifier, and three apply application-owned deterministic rules. Invalid classifier JSON fails
+closed. NeMo has no configured remote model and usage telemetry is disabled before initialization.
 
 ## 9. Database / Data Stores
 

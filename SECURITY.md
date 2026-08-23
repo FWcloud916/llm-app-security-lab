@@ -70,10 +70,17 @@ This repository contains deliberately vulnerable LLM application-security experi
   raw evidence. Both paths MUST use only the standard-library inert HTML parser oracle; they MUST
   NOT launch a browser, execute JavaScript, resolve a URL, open a socket beyond loopback Ollama,
   start a subprocess, or create an external side effect.
+- The Day 24 Guardrails bundle MAY use NeMo Guardrails to orchestrate bundle-owned semantic and
+  deterministic input, topic, and output checks around digest-pinned loopback Ollama. It MAY retain
+  complete synthetic requests and responses only in ignored raw evidence. It MUST disable NeMo
+  usage telemetry, MUST keep model traffic on `127.0.0.1`, MUST retain the Day 23 schema, content
+  review, sink authorization, and HTML-text escaping boundary, and MUST NOT launch a browser,
+  execute JavaScript, resolve or fetch an external URL, start a subprocess, or create an external
+  side effect.
 - MUST keep raw evidence under `evidence/raw/` or `results/`; both paths are ignored by Git.
 
 The Day 2, Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, Day 14, Day 15,
-Day 16, Day 17, Day 22, and Day 23 experiments reduce the blast radius
+Day 16, Day 17, Day 22, Day 23, and Day 24 experiments reduce the blast radius
 but are not an operating-system or container sandbox. The Day 6 evaluator is an offline policy
 prototype, not a production authentication or authorization service. The Day 18 evaluator is an
 offline control-flow prototype, not a production mail, approval, or policy service. The Day 19
@@ -85,6 +92,8 @@ data connector, authorization service, or production Agent framework. The Day 22
 a task-specific validation and serialization prototype, not a prompt-injection firewall or an
 instruction/data parser boundary. The Day 23 output boundary is a text-only renderer prototype,
 not a browser, rich-HTML sanitizer, content-classification service, or general XSS scanner.
+The Day 24 runner is a comparison harness, not a production policy service, prompt-injection
+firewall, or proof that an LLM classifier is independent from the model it judges.
 Run experiments on a machine and account that contain no data the selected model should not see.
 
 ## Reporting a problem

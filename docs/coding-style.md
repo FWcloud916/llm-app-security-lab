@@ -2,7 +2,7 @@
 
 > **Type:** Reference / How-to
 > **Audience:** Developers, AI assistants, code reviewers
-> **Last updated:** 2026-08-06
+> **Last updated:** 2026-08-24
 >
 > This document describes the coding style conventions for LLM Application Security Lab.
 > It covers both **linter-enforced rules** and **team conventions** that cannot be auto-checked.
@@ -61,6 +61,8 @@ versions MUST stop execution. Code MUST NOT replace a failed check with an impli
 - `cli.py` owns argument parsing and human-facing errors.
 - `lab.py` owns scenario loading, fixture validation, model preflight, and evidence assembly.
 - `ollama.py` owns HTTP transport and the loopback restriction.
+- `guardrails.py` owns Day 24 rail orchestration, strict classifier parsing, short-circuit behavior,
+  and sanitized comparison evidence.
 - Tests MUST use fake clients; the default unit-test gate MUST NOT call a model or the network.
 - Secrets MUST NOT enter source, fixtures, snapshots, logs, or committed evidence.
 

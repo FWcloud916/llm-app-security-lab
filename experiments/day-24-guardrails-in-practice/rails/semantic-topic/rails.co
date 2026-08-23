@@ -1,0 +1,8 @@
+define bot day24 blocked
+  "Blocked by the Day 24 application rail."
+
+define flow day24 semantic topic
+  $allowed = execute day24_guard(surface="topic", text=$user_message)
+  if not $allowed
+    bot day24 blocked
+    stop

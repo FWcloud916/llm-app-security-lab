@@ -48,6 +48,11 @@ This project owns versioned, synthetic-data experiments for the 30-day LLM appli
   same candidate through intentionally unescaped and defended HTML-text paths. It MUST use only an
   inert parser oracle, MUST NOT launch a browser or execute JavaScript, and MUST NOT make an
   external request or side effect (source: `SECURITY.md`).
+- Day 24 MAY use NeMo Guardrails to orchestrate bundle-owned semantic and deterministic input,
+  topic, and output rails around digest-pinned loopback Ollama. It MUST disable NeMo usage
+  telemetry, keep every model call on loopback, preserve the Day 23 output contract and safe sink,
+  and MUST NOT launch a browser, execute JavaScript, access an external network, start a subprocess,
+  or create an external side effect (source: `SECURITY.md`).
 - MUST preserve the model, runtime, options, fixture hashes, full request, and observed response for every claimed result (source: `README.md`, `src/llm_security_lab/lab.py`).
 - MUST pass `uv run pytest`, `uv run ruff check .`, and `uv run ruff format --check .` before declaring code changes complete (source: `pyproject.toml`).
 
@@ -87,6 +92,9 @@ uv run llm-security-agent-chain --experiment day-21-end-to-end-agent-attack-chai
 uv run llm-security-agent-chain-report evidence/raw/day-21/results.json
 uv run llm-security-output-boundary --experiment day-23-output-defense-safe-rendering --output evidence/raw/day-23/results.json
 uv run llm-security-output-boundary-report evidence/raw/day-23/results.json
+uv run llm-security-guardrails --experiment day-24-guardrails-in-practice --mode paired --output evidence/raw/day-24/paired.json
+uv run llm-security-guardrails --experiment day-24-guardrails-in-practice --mode end-to-end --output evidence/raw/day-24/end-to-end.json
+uv run llm-security-guardrails-report evidence/raw/day-24/paired.json
 uv run pytest
 uv run ruff check .
 uv run ruff format --check .

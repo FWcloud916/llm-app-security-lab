@@ -21,6 +21,8 @@ A versioned, synthetic-data lab for reproducing the LLM application-security exp
   loopback tool calls, and process-local synthetic tool effects; no external message is sent.
 - Runs the Day 23 paired output-boundary bundle with one shared model candidate, strict validation,
   content review, and inert vulnerable/safe HTML inspection; no browser or outbound request exists.
+- Runs the Day 24 NeMo Guardrails comparison across baseline, semantic, and deterministic paths in
+  paired and independently short-circuited batches while preserving the Day 23 safe sink.
 - Preserves stable milestone tags so an article can point to the exact code it described.
 
 ## Quickstart
@@ -219,6 +221,25 @@ uv run llm-security-output-boundary \
   --experiment day-23-output-defense-safe-rendering \
   --output evidence/raw/day-23/results.json
 uv run llm-security-output-boundary-report evidence/raw/day-23/results.json
+```
+
+The Day 24 experiment uses NeMo Guardrails 0.23.x as the rail orchestrator. The paired batch sends
+each generated candidate through baseline, LLM-semantic, and deterministic paths. The independent
+batch runs input and topic rails before generation and output rails afterward, so blocked requests
+do not create hidden generator calls. Both batches disable NeMo usage telemetry and preserve the
+Day 23 application-owned output contract, content review, `html_text` authorization, and escaping.
+
+```bash
+uv run llm-security-guardrails \
+  --experiment day-24-guardrails-in-practice \
+  --mode paired \
+  --output evidence/raw/day-24/paired.json
+uv run llm-security-guardrails \
+  --experiment day-24-guardrails-in-practice \
+  --mode end-to-end \
+  --output evidence/raw/day-24/end-to-end.json
+uv run llm-security-guardrails-report evidence/raw/day-24/paired.json
+uv run llm-security-guardrails-report evidence/raw/day-24/end-to-end.json
 ```
 
 The Day 15 experiment adds a deterministic, in-memory RAG trace. It compares a clean corpus, the

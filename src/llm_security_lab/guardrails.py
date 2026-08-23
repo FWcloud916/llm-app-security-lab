@@ -8,27 +8,18 @@ import os
 import re
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
-from llm_security_lab.lab import (
-    EXPERIMENT_ID_PATTERN,
-    EXPERIMENTS_ROOT,
-    JsonClient,
-    experiment_root,
-    read_fixture,
-    select_model,
-)
+os.environ["NEMO_GUARDRAILS_NO_USAGE_STATS"] = "1"
+os.environ["DO_NOT_TRACK"] = "1"
+
 from llm_security_lab.ollama import OllamaClient
-from llm_security_lab.output_boundary import (
-    inspect_html_surface,
-    render_safe,
-    render_unescaped,
-    review_candidate,
-    validate_candidate,
-)
 
 GUARDRAILS_RUNNER = "guardrails_comparison"
 GUARDRAILS_SCHEMA_VERSION = 1
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+EXPERIMENTS_ROOT = PROJECT_ROOT / "experiments"
+EXPERIMENT_ID_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 PATHS = ("baseline", "semantic", "deterministic")
 SURFACES = ("input", "topic", "output")
 ALLOWED_ROUTES = {"public-event-summary", "public-event-accessibility"}
@@ -45,6 +36,18 @@ DECISION_SCHEMA = {
     "required": ["decision", "reason"],
     "additionalProperties": False,
 }
+
+
+class JsonClient(Protocol):
+    origin: str
+
+    def request_json(self, path: str, payload: dict[str, Any] | None = None) -> dict[str, Any]: ...
+
+
+def _experiment_root(experiment: str) -> Path:
+    if not EXPERIMENT_ID_PATTERN.fullmatch(experiment):
+        raise ValueError("invalid experiment id")
+    return EXPERIMENTS_ROOT / experiment
 
 
 def _sha256_text(value: str) -> str:
@@ -69,6 +72,8 @@ def available_guardrails_experiments() -> list[str]:
 
 
 def _read_json_fixture(path: str, experiment: str) -> tuple[Any, dict[str, str]]:
+    from llm_security_lab.lab import read_fixture
+
     fixture = read_fixture(path, experiment)
     try:
         value = json.loads(fixture["content"])
@@ -80,7 +85,7 @@ def _read_json_fixture(path: str, experiment: str) -> tuple[Any, dict[str, str]]
 def load_guardrails_definition(experiment: str) -> dict[str, Any]:
     """Load and validate the fixed Day 24 experiment definition."""
     definition = json.loads(
-        (experiment_root(experiment) / "experiment.json").read_text(encoding="utf-8")
+        (_experiment_root(experiment) / "experiment.json").read_text(encoding="utf-8")
     )
     required = {
         "schema_version",
@@ -139,8 +144,8 @@ def load_guardrails_definition(experiment: str) -> dict[str, Any]:
     if not isinstance(rails, dict) or set(rails) != expected_rails:
         raise ValueError("guardrails config paths are incomplete")
     for relative_path in rails.values():
-        root = (experiment_root(experiment) / relative_path).resolve()
-        if not root.is_relative_to(experiment_root(experiment).resolve()):
+        root = (_experiment_root(experiment) / relative_path).resolve()
+        if not root.is_relative_to(_experiment_root(experiment).resolve()):
             raise ValueError("guardrails config escapes the experiment bundle")
         if not root.is_dir() or root.is_symlink():
             raise ValueError("guardrails config directory is invalid")
@@ -331,6 +336,8 @@ class _GuardAction:
             if not isinstance(value, dict) or value.get("route") not in ALLOWED_ROUTES:
                 decision, reason = "block", "route_not_allowed"
         else:
+            from llm_security_lab.output_boundary import inspect_html_surface, render_unescaped
+
             if not isinstance(value, dict):
                 decision, reason = "block", "candidate_not_json"
             else:
@@ -378,7 +385,7 @@ class _NemoExecutor:
                 guard_options=definition["guard"],
                 markers=definition["markers"],
             )
-            config_path = experiment_root(experiment) / relative_path
+            config_path = _experiment_root(experiment) / relative_path
             app = LLMRails(RailsConfig.from_path(str(config_path)))
 
             async def run_action(
@@ -476,6 +483,8 @@ def _candidate(content: str) -> Any:
 
 
 def _output_oracle(content: str, markers: dict[str, str]) -> tuple[str, str]:
+    from llm_security_lab.output_boundary import inspect_html_surface, render_unescaped
+
     value = _candidate(content)
     if not isinstance(value, dict):
         return "block", "candidate_not_json"
@@ -517,6 +526,13 @@ def _application_boundary(
     policy: dict[str, Any],
     markers: dict[str, str],
 ) -> dict[str, Any]:
+    from llm_security_lab.output_boundary import (
+        inspect_html_surface,
+        render_safe,
+        review_candidate,
+        validate_candidate,
+    )
+
     value = _candidate(content)
     if value is None:
         return {"decision": "block", "stage": "json_parser", "active_html": False}
@@ -778,6 +794,8 @@ async def run_guardrails_experiment(
     """Run one complete paired or independent Day 24 batch."""
     if mode not in {"paired", "end-to-end"}:
         raise ValueError("mode must be paired or end-to-end")
+    from llm_security_lab.lab import read_fixture, select_model
+
     definition = load_guardrails_definition(experiment)
     target = read_fixture(definition["target"], experiment)
     contract_raw, contract_evidence = _read_json_fixture(definition["output_contract"], experiment)

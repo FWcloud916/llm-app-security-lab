@@ -44,6 +44,10 @@ This project owns versioned, synthetic-data experiments for the 30-day LLM appli
   input paths. It MUST keep task identity application-owned, use only bundle-owned synthetic
   fixtures, keep Ollama on loopback, and MUST NOT add OCR, tools, downstream actions, or an external
   sink (source: `SECURITY.md`).
+- Day 23 MAY send bundle-owned synthetic text to digest-pinned loopback Ollama, then evaluate the
+  same candidate through intentionally unescaped and defended HTML-text paths. It MUST use only an
+  inert parser oracle, MUST NOT launch a browser or execute JavaScript, and MUST NOT make an
+  external request or side effect (source: `SECURITY.md`).
 - MUST preserve the model, runtime, options, fixture hashes, full request, and observed response for every claimed result (source: `README.md`, `src/llm_security_lab/lab.py`).
 - MUST pass `uv run pytest`, `uv run ruff check .`, and `uv run ruff format --check .` before declaring code changes complete (source: `pyproject.toml`).
 
@@ -81,6 +85,8 @@ uv run llm-security-supply-chain --experiment day-20-ai-supply-chain-security --
 uv run llm-security-supply-chain-report evidence/raw/day-20/results.json
 uv run llm-security-agent-chain --experiment day-21-end-to-end-agent-attack-chain --output evidence/raw/day-21/results.json
 uv run llm-security-agent-chain-report evidence/raw/day-21/results.json
+uv run llm-security-output-boundary --experiment day-23-output-defense-safe-rendering --output evidence/raw/day-23/results.json
+uv run llm-security-output-boundary-report evidence/raw/day-23/results.json
 uv run pytest
 uv run ruff check .
 uv run ruff format --check .

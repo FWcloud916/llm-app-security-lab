@@ -19,6 +19,8 @@ A versioned, synthetic-data lab for reproducing the LLM application-security exp
   accessing the network, or starting subprocesses.
 - Runs the Day 21 hybrid Agent attack-chain bundle with deterministic retrieval, digest-pinned
   loopback tool calls, and process-local synthetic tool effects; no external message is sent.
+- Runs the Day 23 paired output-boundary bundle with one shared model candidate, strict validation,
+  content review, and inert vulnerable/safe HTML inspection; no browser or outbound request exists.
 - Preserves stable milestone tags so an article can point to the exact code it described.
 
 ## Quickstart
@@ -204,6 +206,19 @@ uv run llm-security-lab \
   --run-plan \
   --output evidence/raw/day-22/results.json
 uv run llm-security-report evidence/raw/day-22/results.json
+```
+
+The Day 23 experiment asks the pinned loopback model for one structured event-summary candidate per
+run, then evaluates those exact bytes through an intentionally unescaped HTML path and a defended
+`html_text` path. A separate fixed matrix covers active tags, event handlers, dangerous URLs,
+automatic resource references, secrets, and malformed output objects. The standard-library parser
+only records would-be browser capabilities; it does not render, execute JavaScript, or access a URL.
+
+```bash
+uv run llm-security-output-boundary \
+  --experiment day-23-output-defense-safe-rendering \
+  --output evidence/raw/day-23/results.json
+uv run llm-security-output-boundary-report evidence/raw/day-23/results.json
 ```
 
 The Day 15 experiment adds a deterministic, in-memory RAG trace. It compares a clean corpus, the

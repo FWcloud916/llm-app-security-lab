@@ -27,6 +27,8 @@ llm-security-supply-chain = "llm_security_lab.supply_chain_cli:main"
 llm-security-supply-chain-report = "llm_security_lab.supply_chain_report_cli:main"
 llm-security-agent-chain = "llm_security_lab.agent_chain_cli:main"
 llm-security-agent-chain-report = "llm_security_lab.agent_chain_report_cli:main"
+llm-security-output-boundary = "llm_security_lab.output_boundary_cli:main"
+llm-security-output-boundary-report = "llm_security_lab.output_boundary_report_cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/llm_security_lab"]

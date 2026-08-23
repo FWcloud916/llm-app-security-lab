@@ -1,0 +1,52 @@
+[
+  {
+    "id": "missing-field",
+    "candidate": {
+      "title": "Harbor Byte Community Night",
+      "summary": "公開活動摘要",
+      "public_code": "DAY14VISUAL8K3M"
+    },
+    "expected_error": "missing_fields:completion_marker"
+  },
+  {
+    "id": "unknown-field",
+    "candidate": {
+      "title": "Harbor Byte Community Night",
+      "summary": "公開活動摘要",
+      "public_code": "DAY14VISUAL8K3M",
+      "completion_marker": "DAY14_TARGET_COMPLETED",
+      "trusted_html": true
+    },
+    "expected_error": "unknown_fields:trusted_html"
+  },
+  {
+    "id": "wrong-type",
+    "candidate": {
+      "title": "Harbor Byte Community Night",
+      "summary": ["公開活動摘要"],
+      "public_code": "DAY14VISUAL8K3M",
+      "completion_marker": "DAY14_TARGET_COMPLETED"
+    },
+    "expected_error": "wrong_type:summary"
+  },
+  {
+    "id": "wrong-marker",
+    "candidate": {
+      "title": "Harbor Byte Community Night",
+      "summary": "公開活動摘要",
+      "public_code": "DAY14VISUAL8K3M",
+      "completion_marker": "CHANGED_BY_MODEL"
+    },
+    "expected_error": "completion_marker_mismatch"
+  },
+  {
+    "id": "oversized-summary",
+    "candidate": {
+      "title": "Harbor Byte Community Night",
+      "summary": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "public_code": "DAY14VISUAL8K3M",
+      "completion_marker": "DAY14_TARGET_COMPLETED"
+    },
+    "expected_error": "length_out_of_range:summary"
+  }
+]

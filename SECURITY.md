@@ -64,10 +64,16 @@ This repository contains deliberately vulnerable LLM application-security experi
   untrusted inputs as canonical JSON. The bundle MUST NOT treat valid JSON or labels as an
   authorization boundary, run OCR, add tools, execute downstream actions, or communicate with an
   external sink.
+- The Day 23 output-defense bundle MAY send only bundle-owned synthetic text to digest-pinned
+  loopback Ollama and feed each resulting candidate into paired unescaped and defended HTML-text
+  paths. The vulnerable path MAY retain would-be active HTML and external-resource references as
+  raw evidence. Both paths MUST use only the standard-library inert HTML parser oracle; they MUST
+  NOT launch a browser, execute JavaScript, resolve a URL, open a socket beyond loopback Ollama,
+  start a subprocess, or create an external side effect.
 - MUST keep raw evidence under `evidence/raw/` or `results/`; both paths are ignored by Git.
 
 The Day 2, Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, Day 14, Day 15,
-Day 16, Day 17, and Day 22 experiments reduce the blast radius
+Day 16, Day 17, Day 22, and Day 23 experiments reduce the blast radius
 but are not an operating-system or container sandbox. The Day 6 evaluator is an offline policy
 prototype, not a production authentication or authorization service. The Day 18 evaluator is an
 offline control-flow prototype, not a production mail, approval, or policy service. The Day 19
@@ -77,7 +83,8 @@ malware scanner, signature verifier, package installer, model loader, MCP client
 Day 21 runner is an intentionally vulnerable orchestration prototype; it is not an email client,
 data connector, authorization service, or production Agent framework. The Day 22 input boundary is
 a task-specific validation and serialization prototype, not a prompt-injection firewall or an
-instruction/data parser boundary.
+instruction/data parser boundary. The Day 23 output boundary is a text-only renderer prototype,
+not a browser, rich-HTML sanitizer, content-classification service, or general XSS scanner.
 Run experiments on a machine and account that contain no data the selected model should not see.
 
 ## Reporting a problem

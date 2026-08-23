@@ -2,7 +2,7 @@
 
 > **Type:** Explanation
 > **Audience:** Developers, AI assistants, and any tooling that needs project context
-> **Last updated:** 2026-08-21
+> **Last updated:** 2026-08-23
 >
 > A versioned, synthetic-data lab whose independent experiment bundles support the 30-day LLM
 > application-security series.
@@ -43,6 +43,10 @@ artifacts and their verification.
 - Day 22 pairs the complete Day 14 matrix across the legacy serializer and a strict task-specific
   input contract with canonical JSON. Both paths remain loopback-only and have no OCR, tools,
   actions, or external sink.
+- Day 23 generates one structured candidate per loopback model call, then sends the same bytes to
+  an intentionally unescaped HTML path and a strict schema, review, authorization, and HTML-text
+  path. An inert parser records would-be active markup without launching a browser or making a
+  request.
 - The model artifact is not distributed through this repository.
 
 ## 2. Tech Stack
@@ -204,6 +208,8 @@ llm-security-supply-chain --experiment day-20-ai-supply-chain-security [--output
 llm-security-supply-chain-report <raw-json>
 llm-security-agent-chain --experiment day-21-end-to-end-agent-attack-chain [--output <raw-json>]
 llm-security-agent-chain-report <raw-json>
+llm-security-output-boundary --experiment day-23-output-defense-safe-rendering [--output <raw-json>]
+llm-security-output-boundary-report <raw-json>
 ```
 
 The legacy command defaults to `day-04-vulnerable-baseline`. A schema-v2 experiment selects one
@@ -319,6 +325,11 @@ note/target/image path. The runner validates application-owned task identity, bo
 metadata, serializes provenance-labeled content as canonical JSON, and binds each admission decision
 to the exact user-message SHA-256. Baseline and defended pairs own identical fixture bytes and
 sampling options; JSON labels reduce structural ambiguity but do not enforce model obedience.
+Day 23 uses a dedicated runner. Ollama structured output supplies one candidate JSON string per
+run; application validation still checks exact keys, string types, lengths, and task markers. The
+candidate hash is shared by the vulnerable and defended paths. The defended path separately records
+content review, authorization for the `html_text` sink, and context-specific escaping. Its HTML
+oracle parses strings in memory and cannot execute scripts, load resources, or contact a network.
 
 ## 9. Database / Data Stores
 

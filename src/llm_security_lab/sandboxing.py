@@ -819,7 +819,7 @@ def render_sandbox_report(batch: dict[str, Any]) -> str:
         for case in batch["cases"]:
             for outcome in case["outcomes"]:
                 violations = (
-                    ",".join(outcome["container"]["containment_violations"])
+                    ",".join(outcome["container"]["containment_violations"]) or "none"
                     if outcome["container"]
                     else "none"
                 )

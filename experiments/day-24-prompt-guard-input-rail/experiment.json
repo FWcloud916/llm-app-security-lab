@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "id": "day-24-prompt-guard-input-rail",
+  "runner": "prompt_guard_input_comparison",
+  "guard_model": {
+    "name": "gemma4:latest",
+    "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb"
+  },
+  "semantic_guard": {
+    "temperature": 0,
+    "seed": 2400
+  },
+  "prompt_guard": {
+    "repo_id": "meta-llama/Llama-Prompt-Guard-2-86M",
+    "revision": "a8ded8e697ce7c355e395a0df51f94adb4a2fd27",
+    "max_length": 512,
+    "benign_index": 0,
+    "malicious_index": 1,
+    "index_mapping_basis": "official-model-card-example-and-local-pilot",
+    "file_sha256": {
+      "config.json": "cd54ac39a1f2c3c5146bd5295b34038f8b4d9069e2f844450da014a523bb7653",
+      "model.safetensors": "e72017dbbe89c1232dcbc4a74ce0c389db5b468c42afd05850347b2a8c5f6b09",
+      "special_tokens_map.json": "9463f61e1b109a8eb4688b829260d7c6b1e6dff04c98ff7269bb89e2b92369b9",
+      "tokenizer.json": "3e7e96867c2acdd575f0862c74822e05d1d15b93d9d9a4a2144b1ce83ae3339f",
+      "tokenizer_config.json": "fa09cf22b9d723377f95706967f789ca1a8267e1412385705e1ed51ce0559189"
+    }
+  },
+  "repetitions": [2411, 2412, 2413, 2414, 2415],
+  "cases": "cases.json",
+  "rails": {
+    "semantic": "rails/semantic-input",
+    "deterministic": "rails/deterministic-input",
+    "prompt_guard": "rails/prompt-guard-input"
+  }
+}

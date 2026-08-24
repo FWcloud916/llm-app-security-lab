@@ -23,6 +23,9 @@ A versioned, synthetic-data lab for reproducing the LLM application-security exp
   content review, and inert vulnerable/safe HTML inspection; no browser or outbound request exists.
 - Runs the Day 24 NeMo Guardrails comparison across baseline, semantic, and deterministic paths in
   paired and independently short-circuited batches while preserving the Day 23 safe sink.
+- Runs a separate Day 24 input-only comparison across the semantic rail, deterministic route rule,
+  and a revision-pinned, hash-verified local Llama Prompt Guard 2 86M classifier; no generator or
+  output sink exists in this extension.
 - Preserves stable milestone tags so an article can point to the exact code it described.
 
 ## Quickstart
@@ -36,6 +39,9 @@ A versioned, synthetic-data lab for reproducing the LLM application-security exp
 The Day 4 checkpoint expects `gemma4:latest` with digest
 `c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb`. The model artifact is not
 stored in Git. Using another model or digest creates a new result rather than an exact reproduction.
+The Prompt Guard extension additionally requires authorized access and a previously downloaded
+`meta-llama/Llama-Prompt-Guard-2-86M` snapshot at the revision declared in its bundle. The runner
+never downloads the model and fails if the local files or hashes differ.
 
 The Day 2 experiment preserves each complete model-visible user message as an experiment-owned
 fixture. Its two scenarios use the same five fixed seeds and sampling options:
@@ -240,6 +246,21 @@ uv run llm-security-guardrails \
   --output evidence/raw/day-24/end-to-end.json
 uv run llm-security-guardrails-report evidence/raw/day-24/paired.json
 uv run llm-security-guardrails-report evidence/raw/day-24/end-to-end.json
+```
+
+The independent Prompt Guard extension reuses only the five input cases in an experiment-owned
+fixture. Each case passes through three NeMo input rails five times. The semantic path calls the
+digest-pinned loopback model, the deterministic path checks the application route, and Prompt Guard
+runs from the verified local snapshot. The extension makes no generator call and has no output sink.
+Install its large runtime only when needed:
+
+```bash
+uv sync --extra prompt-guard --python 3.13
+uv run --extra prompt-guard --python 3.13 llm-security-prompt-guard \
+  --experiment day-24-prompt-guard-input-rail \
+  --output evidence/raw/day-24/prompt-guard.json
+uv run --extra prompt-guard --python 3.13 llm-security-prompt-guard-report \
+  evidence/raw/day-24/prompt-guard.json
 ```
 
 The Day 15 experiment adds a deterministic, in-memory RAG trace. It compares a clean corpus, the

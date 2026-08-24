@@ -32,6 +32,14 @@ llm-security-output-boundary = "llm_security_lab.output_boundary_cli:main"
 llm-security-output-boundary-report = "llm_security_lab.output_boundary_report_cli:main"
 llm-security-guardrails = "llm_security_lab.guardrails_cli:main"
 llm-security-guardrails-report = "llm_security_lab.guardrails_report_cli:main"
+llm-security-prompt-guard = "llm_security_lab.prompt_guard_cli:main"
+llm-security-prompt-guard-report = "llm_security_lab.prompt_guard_report_cli:main"
+
+[project.optional-dependencies]
+prompt-guard = [
+    "torch>=2.2,<3",
+    "transformers>=4.44,<5",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/llm_security_lab"]

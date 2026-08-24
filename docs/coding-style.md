@@ -63,6 +63,8 @@ versions MUST stop execution. Code MUST NOT replace a failed check with an impli
 - `ollama.py` owns HTTP transport and the loopback restriction.
 - `guardrails.py` owns Day 24 rail orchestration, strict classifier parsing, short-circuit behavior,
   and sanitized comparison evidence.
+- `prompt_guard.py` owns the independent Day 24 input-only comparison, verified local model loading,
+  fixed 512-token contract, and sanitized evidence.
 - Tests MUST use fake clients; the default unit-test gate MUST NOT call a model or the network.
 - Secrets MUST NOT enter source, fixtures, snapshots, logs, or committed evidence.
 

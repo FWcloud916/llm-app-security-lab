@@ -77,6 +77,14 @@ This repository contains deliberately vulnerable LLM application-security experi
   review, sink authorization, and HTML-text escaping boundary, and MUST NOT launch a browser,
   execute JavaScript, resolve or fetch an external URL, start a subprocess, or create an external
   side effect.
+- The Day 24 Prompt Guard extension MAY compare the semantic and deterministic input rails with
+  `meta-llama/Llama-Prompt-Guard-2-86M` using only bundle-owned synthetic input. The Prompt Guard
+  artifact MUST already exist in the local Hugging Face cache, match the bundle's exact revision
+  and file hashes, and load with offline and `local_files_only` controls. The runner MUST reject
+  input beyond its fixed 512-token contract. It MUST NOT download or update a model during a run,
+  call a generator, reach an output sink, launch a browser, execute JavaScript, access an external
+  network, start a subprocess, or create an external side effect. Loopback Ollama MAY be used only
+  by the comparison's digest-pinned semantic input rail.
 - MUST keep raw evidence under `evidence/raw/` or `results/`; both paths are ignored by Git.
 
 The Day 2, Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, Day 14, Day 15,
@@ -93,7 +101,9 @@ a task-specific validation and serialization prototype, not a prompt-injection f
 instruction/data parser boundary. The Day 23 output boundary is a text-only renderer prototype,
 not a browser, rich-HTML sanitizer, content-classification service, or general XSS scanner.
 The Day 24 runner is a comparison harness, not a production policy service, prompt-injection
-firewall, or proof that an LLM classifier is independent from the model it judges.
+firewall, or proof that an LLM classifier is independent from the model it judges. The Prompt
+Guard extension tests one binary prompt-attack classifier on five synthetic Chinese inputs; it is
+not a topic classifier, output classifier, multilingual benchmark, or production deployment claim.
 Run experiments on a machine and account that contain no data the selected model should not see.
 
 ## Reporting a problem

@@ -53,6 +53,12 @@ This project owns versioned, synthetic-data experiments for the 30-day LLM appli
   telemetry, keep every model call on loopback, preserve the Day 23 output contract and safe sink,
   and MUST NOT launch a browser, execute JavaScript, access an external network, start a subprocess,
   or create an external side effect (source: `SECURITY.md`).
+- The Day 24 Prompt Guard extension MAY load the gated 86M classifier only from a revision-pinned,
+  hash-verified local Hugging Face snapshot. It MUST use bundle-owned synthetic input, set
+  Hugging Face and Transformers offline modes before import, reject inputs beyond its fixed
+  512-token contract, and MUST NOT download during a run, generate a response, reach a sink, launch
+  a browser, execute JavaScript, access an external network, start a subprocess, or create an
+  external side effect (source: `SECURITY.md`).
 - MUST preserve the model, runtime, options, fixture hashes, full request, and observed response for every claimed result (source: `README.md`, `src/llm_security_lab/lab.py`).
 - MUST pass `uv run pytest`, `uv run ruff check .`, and `uv run ruff format --check .` before declaring code changes complete (source: `pyproject.toml`).
 
@@ -95,6 +101,8 @@ uv run llm-security-output-boundary-report evidence/raw/day-23/results.json
 uv run llm-security-guardrails --experiment day-24-guardrails-in-practice --mode paired --output evidence/raw/day-24/paired.json
 uv run llm-security-guardrails --experiment day-24-guardrails-in-practice --mode end-to-end --output evidence/raw/day-24/end-to-end.json
 uv run llm-security-guardrails-report evidence/raw/day-24/paired.json
+uv run --extra prompt-guard --python 3.13 llm-security-prompt-guard --experiment day-24-prompt-guard-input-rail --output evidence/raw/day-24/prompt-guard.json
+uv run --extra prompt-guard --python 3.13 llm-security-prompt-guard-report evidence/raw/day-24/prompt-guard.json
 uv run pytest
 uv run ruff check .
 uv run ruff format --check .

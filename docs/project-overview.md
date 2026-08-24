@@ -50,7 +50,10 @@ artifacts and their verification.
 - Day 24 uses NeMo Guardrails 0.23.x to orchestrate separate semantic and deterministic input,
   topic, and output rails. Paired runs share one candidate; independent runs short-circuit before
   generation or before the sink. The Day 23 application boundary remains mandatory.
-- The model artifact is not distributed through this repository.
+- A separate Day 24 extension compares three input rails: the existing semantic classifier, the
+  deterministic route rule, and Llama Prompt Guard 2 86M loaded from a revision-pinned,
+  hash-verified local snapshot. It has no generator or sink.
+- Model artifacts are not distributed through this repository.
 
 ## 2. Tech Stack
 
@@ -58,7 +61,7 @@ artifacts and their verification.
 |---|---|---|
 | Language | Python 3.11+ | Standard-library HTTP and filesystem APIs are sufficient for the baseline. |
 | Environment | uv with `uv.lock` | Locks development dependencies and provides one command surface. |
-| Runtime dependencies | Python standard library + pypdf 6.x + qdrant-client 1.19.x | Keeps transport and common parsing small while enabling audited PDF extraction and an ephemeral local vector-engine comparison. |
+| Runtime dependencies | Python standard library + pypdf 6.x + qdrant-client 1.19.x; optional Transformers and PyTorch | Keeps the normal runtime smaller while enabling a local Prompt Guard experiment only when its extra is selected. |
 | Test | pytest | Supports offline fake clients, temporary paths, and explicit failure assertions. |
 | Lint and format | Ruff | Provides one configured check and format gate. |
 | Model runtime | Ollama on `127.0.0.1` | Preserves the local-only Day 4 safety boundary. |
@@ -215,6 +218,8 @@ llm-security-output-boundary --experiment day-23-output-defense-safe-rendering [
 llm-security-output-boundary-report <raw-json>
 llm-security-guardrails --experiment day-24-guardrails-in-practice --mode {paired,end-to-end} [--output <raw-json>]
 llm-security-guardrails-report <raw-json>
+llm-security-prompt-guard --experiment day-24-prompt-guard-input-rail [--output <raw-json>]
+llm-security-prompt-guard-report <raw-json>
 ```
 
 The legacy command defaults to `day-04-vulnerable-baseline`. A schema-v2 experiment selects one
@@ -339,6 +344,12 @@ Day 24 uses a dedicated asynchronous runner. Six small NeMo configurations invok
 actions through `check_async()`: three use the digest-pinned loopback model as a strict semantic
 classifier, and three apply application-owned deterministic rules. Invalid classifier JSON fails
 closed. NeMo has no configured remote model and usage telemetry is disabled before initialization.
+The Prompt Guard extension has a separate bundle and runner. Three NeMo input configurations apply
+the existing loopback semantic classifier, the deterministic route rule, and a local Prompt Guard
+classifier to the exact same canonical JSON bytes. The local loader resolves one fixed Hugging Face
+revision from cache, verifies required file hashes, disables telemetry and online lookup before
+import, and rejects inputs beyond 512 tokens. The fixed plan contains 25 run units and 75 path
+evaluations, with no generation or sink.
 
 ## 9. Database / Data Stores
 

@@ -34,6 +34,8 @@ llm-security-guardrails = "llm_security_lab.guardrails_cli:main"
 llm-security-guardrails-report = "llm_security_lab.guardrails_report_cli:main"
 llm-security-prompt-guard = "llm_security_lab.prompt_guard_cli:main"
 llm-security-prompt-guard-report = "llm_security_lab.prompt_guard_report_cli:main"
+llm-security-sandbox = "llm_security_lab.sandboxing_cli:main"
+llm-security-sandbox-report = "llm_security_lab.sandboxing_report_cli:main"
 
 [project.optional-dependencies]
 prompt-guard = [

@@ -26,6 +26,8 @@ A versioned, synthetic-data lab for reproducing the LLM application-security exp
 - Runs a separate Day 24 input-only comparison across the semantic rail, deterministic route rule,
   and a revision-pinned, hash-verified local Llama Prompt Guard 2 86M classifier; no generator or
   output sink exists in this extension.
+- Runs the Day 25 least-privilege ablation through exact action, resource, approval, and Docker
+  runtime boundaries using only temporary synthetic data and a fixed workload script.
 - Preserves stable milestone tags so an article can point to the exact code it described.
 
 ## Quickstart
@@ -261,6 +263,26 @@ uv run --extra prompt-guard --python 3.13 llm-security-prompt-guard \
   --output evidence/raw/day-24/prompt-guard.json
 uv run --extra prompt-guard --python 3.13 llm-security-prompt-guard-report \
   evidence/raw/day-24/prompt-guard.json
+```
+
+The Day 25 experiment separates a model proposal from execution authority. The fixed matrix removes
+one control at a time across action availability, resource grants, exact approval, and runtime
+containment. A second plan asks the digest-pinned loopback model for 20 strict JSON proposals. Only
+allowlisted operations can reach the fixed Alpine workload, and the hardened profile uses a
+non-root user, read-only root filesystem, disabled network, dropped capabilities, no-new-privileges,
+resource limits, and temporary synthetic mounts.
+
+```bash
+uv run llm-security-sandbox \
+  --experiment day-25-least-privilege-agent-sandboxing \
+  --mode fixed \
+  --output evidence/raw/day-25/fixed.json
+uv run llm-security-sandbox \
+  --experiment day-25-least-privilege-agent-sandboxing \
+  --mode model \
+  --output evidence/raw/day-25/model.json
+uv run llm-security-sandbox-report evidence/raw/day-25/fixed.json
+uv run llm-security-sandbox-report evidence/raw/day-25/model.json
 ```
 
 The Day 15 experiment adds a deterministic, in-memory RAG trace. It compares a clean corpus, the

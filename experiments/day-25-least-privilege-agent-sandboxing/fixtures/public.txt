@@ -1,0 +1,1 @@
+Synthetic public event record: the security workshop begins at 09:00 in Room A.

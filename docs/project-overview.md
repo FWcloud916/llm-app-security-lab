@@ -2,7 +2,7 @@
 
 > **Type:** Explanation
 > **Audience:** Developers, AI assistants, and any tooling that needs project context
-> **Last updated:** 2026-08-24
+> **Last updated:** 2026-08-25
 >
 > A versioned, synthetic-data lab whose independent experiment bundles support the 30-day LLM
 > application-security series.
@@ -53,6 +53,9 @@ artifacts and their verification.
 - A separate Day 24 extension compares three input rails: the existing semantic classifier, the
   deterministic route rule, and Llama Prompt Guard 2 86M loaded from a revision-pinned,
   hash-verified local snapshot. It has no generator or sink.
+- Day 25 combines strict model proposals with deterministic action, resource, and exact-approval
+  checks before an exact Docker adapter. Its fixed ablation removes one control at a time; the
+  model plan keeps every executable path on the hardened container profile.
 - Model artifacts are not distributed through this repository.
 
 ## 2. Tech Stack
@@ -129,6 +132,13 @@ Day 21 synthetic RAG context + loopback Ollama
     ├─► native read_case_record proposal ──► synthetic record in memory
     ├─► native send_case_summary proposal ──► in-memory sink ledger
     └─► source / retrieval / tool / destination control matrix
+
+Day 25 fixed or model proposal
+    │
+    ├─► action allowlist
+    ├─► subject + Agent + resource grant, expiry, and revocation
+    ├─► exact reviewed-envelope binding
+    └─► exact Docker adapter ──► hardened fixed workload ──► containment evidence
 ```
 
 ### Key Principles
@@ -156,6 +166,9 @@ Day 21 synthetic RAG context + loopback Ollama
 - Day 21 preserves model variability and deterministic controls as separate evidence. Native tool
   calls are executed only by exact experiment-owned in-memory adapters; parallel, repeated,
   unknown, malformed, or over-limit calls fail closed.
+- Day 25 never turns model text into a command line. The proposal selects one declared operation;
+  deterministic policy controls decide whether an exact Docker argument vector may run it. Runtime
+  containment remains a separate boundary after authorization.
 
 ## 4. Directory Structure
 
@@ -167,6 +180,7 @@ Day 21 synthetic RAG context + loopback Ollama
 │   ├── tool_boundary.py       # Offline function-call and tool-output boundary matrix and report
 │   ├── supply_chain.py        # Offline artifact-intake matrix and repository metadata audit
 │   ├── agent_chain.py         # Hybrid Agent tool loop and deterministic cut-point matrix
+│   ├── sandboxing.py          # Day 25 policy ablation and exact Docker adapter
 │   ├── lab.py                 # Bundle, fixture, digest, request, and evidence flow
 │   ├── knowledge_base.py      # Synthetic publish/revoke/rebuild lifecycle replay
 │   ├── report.py              # Sanitized repeated-run summary
@@ -220,6 +234,8 @@ llm-security-guardrails --experiment day-24-guardrails-in-practice --mode {paire
 llm-security-guardrails-report <raw-json>
 llm-security-prompt-guard --experiment day-24-prompt-guard-input-rail [--output <raw-json>]
 llm-security-prompt-guard-report <raw-json>
+llm-security-sandbox --experiment day-25-least-privilege-agent-sandboxing --mode {fixed,model} [--output <raw-json>]
+llm-security-sandbox-report <raw-json>
 ```
 
 The legacy command defaults to `day-04-vulnerable-baseline`. A schema-v2 experiment selects one

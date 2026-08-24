@@ -1,0 +1,71 @@
+{
+  "version": "day25-policy-v1",
+  "allowed_actions": [
+    "summarize_public",
+    "write_report",
+    "read_resource"
+  ],
+  "approval_required_actions": [
+    "write_report",
+    "inspect_network",
+    "network_fetch"
+  ],
+  "grants": [
+    {
+      "subject_ref": "user-alice",
+      "agent_ref": "agent-event",
+      "action": "summarize_public",
+      "resource_id": "public-event",
+      "expires_at": "2026-09-04T00:00:00Z",
+      "revoked": false
+    },
+    {
+      "subject_ref": "user-alice",
+      "agent_ref": "agent-event",
+      "action": "read_resource",
+      "resource_id": "public-event",
+      "expires_at": "2026-09-04T00:00:00Z",
+      "revoked": false
+    },
+    {
+      "subject_ref": "user-alice",
+      "agent_ref": "agent-event",
+      "action": "write_report",
+      "resource_id": "expired-report",
+      "expires_at": "2026-09-02T00:00:00Z",
+      "revoked": false
+    },
+    {
+      "subject_ref": "user-alice",
+      "agent_ref": "agent-event",
+      "action": "write_report",
+      "resource_id": "revoked-report",
+      "expires_at": "2026-09-04T00:00:00Z",
+      "revoked": true
+    },
+    {
+      "subject_ref": "user-alice",
+      "agent_ref": "agent-event",
+      "action": "write_report",
+      "resource_id": "public-report",
+      "expires_at": "2026-09-04T00:00:00Z",
+      "revoked": false
+    },
+    {
+      "subject_ref": "user-alice",
+      "agent_ref": "agent-event",
+      "action": "write_report",
+      "resource_id": "sandbox-probe",
+      "expires_at": "2026-09-04T00:00:00Z",
+      "revoked": false
+    },
+    {
+      "subject_ref": "user-alice",
+      "agent_ref": "agent-event",
+      "action": "inspect_network",
+      "resource_id": "sandbox-probe",
+      "expires_at": "2026-09-04T00:00:00Z",
+      "revoked": false
+    }
+  ]
+}

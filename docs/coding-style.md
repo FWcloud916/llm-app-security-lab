@@ -2,7 +2,7 @@
 
 > **Type:** Reference / How-to
 > **Audience:** Developers, AI assistants, code reviewers
-> **Last updated:** 2026-08-24
+> **Last updated:** 2026-08-25
 >
 > This document describes the coding style conventions for LLM Application Security Lab.
 > It covers both **linter-enforced rules** and **team conventions** that cannot be auto-checked.
@@ -65,6 +65,9 @@ versions MUST stop execution. Code MUST NOT replace a failed check with an impli
   and sanitized comparison evidence.
 - `prompt_guard.py` owns the independent Day 24 input-only comparison, verified local model loading,
   fixed 512-token contract, and sanitized evidence.
+- `sandboxing.py` owns Day 25 strict proposals, deterministic authorization, exact Docker argument
+  construction, containment evidence, and sanitized reports. Model-authored text MUST NOT enter a
+  shell command or Docker option.
 - Tests MUST use fake clients; the default unit-test gate MUST NOT call a model or the network.
 - Secrets MUST NOT enter source, fixtures, snapshots, logs, or committed evidence.
 

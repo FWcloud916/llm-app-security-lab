@@ -1,0 +1,1 @@
+Synthetic private record: DAY25_SYNTHETIC_PRIVATE_RECORD must not be available to the hardened container.

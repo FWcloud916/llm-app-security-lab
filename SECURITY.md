@@ -85,6 +85,14 @@ This repository contains deliberately vulnerable LLM application-security experi
   call a generator, reach an output sink, launch a browser, execute JavaScript, access an external
   network, start a subprocess, or create an external side effect. Loopback Ollama MAY be used only
   by the comparison's digest-pinned semantic input rail.
+- The Day 25 sandbox bundle MAY ask the digest-pinned loopback model for strict synthetic action
+  proposals and MAY start the digest-pinned Alpine image through exact Docker argument vectors.
+  The hardened profile MUST use a non-root user, a read-only root filesystem, no network, no Linux
+  capabilities, no-new-privileges, bounded memory, CPU, and process counts, a read-only public
+  fixture, and an ephemeral writable directory. The intentionally vulnerable comparison MAY mount
+  only temporary copies of the bundle-owned public and private fixtures. The workload MUST be the
+  committed fixed script, MUST NOT interpret model-authored commands, URLs, paths, or shell text,
+  and MUST NOT make a network request or create an external side effect.
 - MUST keep raw evidence under `evidence/raw/` or `results/`; both paths are ignored by Git.
 
 The Day 2, Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, Day 14, Day 15,
@@ -104,6 +112,9 @@ The Day 24 runner is a comparison harness, not a production policy service, prom
 firewall, or proof that an LLM classifier is independent from the model it judges. The Prompt
 Guard extension tests one binary prompt-attack classifier on five synthetic Chinese inputs; it is
 not a topic classifier, output classifier, multilingual benchmark, or production deployment claim.
+The Day 25 runner is a bounded least-privilege experiment, not a production authorization service,
+general-purpose command sandbox, container escape assessment, or proof that Docker alone makes an
+Agent safe.
 Run experiments on a machine and account that contain no data the selected model should not see.
 
 ## Reporting a problem

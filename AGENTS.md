@@ -59,6 +59,11 @@ This project owns versioned, synthetic-data experiments for the 30-day LLM appli
   512-token contract, and MUST NOT download during a run, generate a response, reach a sink, launch
   a browser, execute JavaScript, access an external network, start a subprocess, or create an
   external side effect (source: `SECURITY.md`).
+- Day 25 MAY start only the digest-pinned Alpine image with exact Docker argument vectors and the
+  bundle-owned fixed workload. It MUST keep proposals as data, use only temporary synthetic mounts,
+  enforce the hardened container profile for every full-control path, and MUST NOT interpret
+  model-authored commands, make a network request, or create an external side effect (source:
+  `SECURITY.md`).
 - MUST preserve the model, runtime, options, fixture hashes, full request, and observed response for every claimed result (source: `README.md`, `src/llm_security_lab/lab.py`).
 - MUST pass `uv run pytest`, `uv run ruff check .`, and `uv run ruff format --check .` before declaring code changes complete (source: `pyproject.toml`).
 
@@ -103,6 +108,9 @@ uv run llm-security-guardrails --experiment day-24-guardrails-in-practice --mode
 uv run llm-security-guardrails-report evidence/raw/day-24/paired.json
 uv run --extra prompt-guard --python 3.13 llm-security-prompt-guard --experiment day-24-prompt-guard-input-rail --output evidence/raw/day-24/prompt-guard.json
 uv run --extra prompt-guard --python 3.13 llm-security-prompt-guard-report evidence/raw/day-24/prompt-guard.json
+uv run llm-security-sandbox --experiment day-25-least-privilege-agent-sandboxing --mode fixed --output evidence/raw/day-25/fixed.json
+uv run llm-security-sandbox --experiment day-25-least-privilege-agent-sandboxing --mode model --output evidence/raw/day-25/model.json
+uv run llm-security-sandbox-report evidence/raw/day-25/fixed.json
 uv run pytest
 uv run ruff check .
 uv run ruff format --check .

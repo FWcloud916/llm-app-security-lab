@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "day-25-least-privilege-agent-sandboxing",
+  "runner": "docker_agent_sandbox",
+  "evaluation_time": "2026-09-03T00:00:00Z",
+  "image": {
+    "reference": "alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b",
+    "digest": "alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b",
+    "id": "sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b"
+  },
+  "model": {
+    "name": "gemma4:latest",
+    "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb"
+  },
+  "seeds": [2511, 2512, 2513, 2514, 2515],
+  "temperature": 0.7,
+  "policy": "policy.json",
+  "fixed_cases": "fixed-cases.json",
+  "model_cases": "model-cases.json",
+  "system_prompt": "system-prompt.txt",
+  "workload": "workload.sh",
+  "public_fixture": "public.txt",
+  "private_fixture": "private.txt"
+}

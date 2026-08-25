@@ -99,6 +99,13 @@ This repository contains deliberately vulnerable LLM application-security experi
   the network, read real personal data, persist an index, or create an external side effect. Raw
   synthetic values MAY appear only in ignored raw evidence; the sanitized report MUST expose only
   counts, versions, and fixture hashes.
+- The Day 27 observability bundle MUST use only its fixed synthetic request, safe attribute policy,
+  and six declared audit events. It MAY compare intentionally unsafe in-memory span attributes with
+  an allowlisted metadata-only trace and MAY create an ephemeral HMAC-SHA-256 audit key. It MUST
+  NOT export telemetry, persist or print the HMAC key, call an LLM, access the network, read real
+  personal data, or create an external side effect. Raw synthetic text and complete audit records
+  MAY appear only in ignored raw evidence; sanitized reports MUST expose only counts, versions,
+  verification outcomes, and fixture hashes.
 - MUST keep raw evidence under `evidence/raw/` or `results/`; both paths are ignored by Git.
 
 The Day 2, Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, Day 14, Day 15,
@@ -124,6 +131,9 @@ Agent safe.
 The Day 26 runner is a small English-language synthetic benchmark, not a production PII inventory,
 Taiwan privacy-law compliance assessment, multilingual benchmark, or proof that masking repairs an
 authorization failure.
+The Day 27 runner is an offline trace-and-integrity prototype, not a production telemetry backend,
+SIEM, key-management system, append-only storage service, or proof that HMAC prevents authorized
+deletion. Tail truncation requires an independently retained terminal checkpoint.
 Run experiments on a machine and account that contain no data the selected model should not see.
 
 ## Reporting a problem

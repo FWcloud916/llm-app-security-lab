@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "id": "day-27-observability-audit",
+  "runner": "deterministic_observability_audit",
+  "profiles": ["unsafe_attributes", "safe_attributes"],
+  "policy": "policy.json",
+  "events": "events.json"
+}

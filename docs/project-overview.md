@@ -58,6 +58,8 @@ artifacts and their verification.
   model plan keeps every executable path on the hardened container profile.
 - Day 26 compares application rules, Presidio built-in recognizers, and a layered registry over one
   fixed labeled synthetic corpus. It performs no model or network call.
+- Day 27 compares unsafe and allowlisted OpenTelemetry span attributes, then links six fixed audit
+  events with HMAC-SHA-256 and tests the separate terminal-checkpoint boundary.
 - Model artifacts are not distributed through this repository.
 
 ## 2. Tech Stack
@@ -66,7 +68,7 @@ artifacts and their verification.
 |---|---|---|
 | Language | Python 3.11+ | Standard-library HTTP and filesystem APIs are sufficient for the baseline. |
 | Environment | uv with `uv.lock` | Locks development dependencies and provides one command surface. |
-| Runtime dependencies | Python standard library + pypdf 6.x + qdrant-client 1.19.x; optional Transformers/PyTorch or Presidio/SpaCy | Keeps large or experiment-specific runtimes behind explicit extras. |
+| Runtime dependencies | Python standard library + pypdf 6.x + qdrant-client 1.19.x; optional Transformers/PyTorch, Presidio/SpaCy, or OpenTelemetry SDK | Keeps large or experiment-specific runtimes behind explicit extras. |
 | Test | pytest | Supports offline fake clients, temporary paths, and explicit failure assertions. |
 | Lint and format | Ruff | Provides one configured check and format gate. |
 | Model runtime | Ollama on `127.0.0.1` | Preserves the local-only Day 4 safety boundary. |
@@ -148,6 +150,12 @@ Day 26 fixed labeled synthetic text
     ├─► application-owned deterministic recognizers
     ├─► Presidio built-in recognizers
     └─► layered Presidio registry ──► fixed masking ──► span and leakage metrics
+
+Day 27 fixed synthetic request
+    │
+    ├─► unsafe OpenTelemetry attributes ──► raw text marker count
+    ├─► allowlisted attributes ──► correlation and required-field checks
+    └─► six canonical audit events ──► HMAC chain ──► terminal checkpoint
 ```
 
 ### Key Principles
@@ -180,6 +188,9 @@ Day 26 fixed labeled synthetic text
   containment remains a separate boundary after authorization.
 - Day 26 treats PII detection as evidence, not authorization. A detector profile returns spans;
   application policy still decides which entities to block, replace, retain, or route for review.
+- Day 27 treats trace content and audit integrity as separate controls. Attribute allowlists reduce
+  copied sensitive text; HMAC links detect modification but need an independently retained terminal
+  checkpoint to detect a valid-prefix truncation.
 
 ## 4. Directory Structure
 
@@ -193,6 +204,7 @@ Day 26 fixed labeled synthetic text
 │   ├── agent_chain.py         # Hybrid Agent tool loop and deterministic cut-point matrix
 │   ├── sandboxing.py          # Day 25 policy ablation and exact Docker adapter
 │   ├── pii.py                 # Day 26 fixed PII detection and masking matrix
+│   ├── observability.py       # Day 27 in-memory spans and HMAC-linked audit events
 │   ├── lab.py                 # Bundle, fixture, digest, request, and evidence flow
 │   ├── knowledge_base.py      # Synthetic publish/revoke/rebuild lifecycle replay
 │   ├── report.py              # Sanitized repeated-run summary
@@ -250,6 +262,8 @@ llm-security-sandbox --experiment day-25-least-privilege-agent-sandboxing --mode
 llm-security-sandbox-report <raw-json>
 llm-security-pii --experiment day-26-pii-detection-masking [--output <raw-json>]
 llm-security-pii-report <raw-json>
+llm-security-observability --experiment day-27-observability-audit [--output <raw-json>]
+llm-security-observability-report <raw-json>
 ```
 
 The legacy command defaults to `day-04-vulnerable-baseline`. A schema-v2 experiment selects one

@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "version": "day27-observability-policy-v1",
+  "audit_event_count": 6,
+  "safe_attribute_allowlist": [
+    "request.id",
+    "policy.version",
+    "event.name",
+    "content.sha256",
+    "decision",
+    "reason_code",
+    "pii.count",
+    "result.status"
+  ],
+  "required_safe_attributes": ["request.id", "policy.version", "event.name"]
+}

@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "synthetic_data_only": true,
+  "request_id": "req-day27-0001",
+  "input_text": "Summarize CUST-2701 for avery.day27@example.test.",
+  "output_text": "CUST-2701 belongs to avery.day27@example.test.",
+  "sensitive_markers": ["CUST-2701", "avery.day27@example.test"],
+  "events": [
+    {"name": "request_received", "content_source": "input", "attributes": {"result.status": "accepted"}},
+    {"name": "authorization_decided", "attributes": {"decision": "allow", "reason_code": "resource_granted"}},
+    {"name": "pii_detected", "attributes": {"pii.count": 2, "decision": "replace"}},
+    {"name": "model_request_prepared", "content_source": "input", "attributes": {"result.status": "prepared"}},
+    {"name": "output_reviewed", "content_source": "output", "attributes": {"decision": "replace", "reason_code": "pii_detected"}},
+    {"name": "request_completed", "attributes": {"result.status": "masked"}}
+  ]
+}

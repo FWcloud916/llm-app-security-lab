@@ -30,6 +30,8 @@ A versioned, synthetic-data lab for reproducing the LLM application-security exp
   runtime boundaries using only temporary synthetic data and a fixed workload script.
 - Runs the Day 26 offline PII comparison across raw, application-rule, Presidio built-in, and
   layered detection paths using 24 labeled synthetic cases and fixed masking operators.
+- Runs the Day 27 offline OpenTelemetry comparison and an HMAC-linked audit chain over six fixed
+  synthetic events, including a terminal-checkpoint truncation test.
 - Preserves stable milestone tags so an article can point to the exact code it described.
 
 ## Quickstart
@@ -299,6 +301,21 @@ uv run --extra pii llm-security-pii \
   --experiment day-26-pii-detection-masking \
   --output evidence/raw/day-26/results.json
 uv run --extra pii llm-security-pii-report evidence/raw/day-26/results.json
+```
+
+The Day 27 experiment compares a trace that stores synthetic input and output text with an
+allowlisted metadata-only trace. The safe trace feeds six canonical audit events into an
+HMAC-SHA-256 chain. Five registered tamper cases cover mutation, middle deletion, reordering,
+insertion, and tail deletion with a signed terminal checkpoint. A separate tail-deletion check
+omits the checkpoint to preserve the chain's known truncation limit. The HMAC key exists only in
+memory, and the run makes no model or network call.
+
+```bash
+uv sync --extra observability
+uv run --extra observability llm-security-observability \
+  --experiment day-27-observability-audit \
+  --output evidence/raw/day-27/results.json
+uv run --extra observability llm-security-observability-report evidence/raw/day-27/results.json
 ```
 
 The Day 15 experiment adds a deterministic, in-memory RAG trace. It compares a clean corpus, the

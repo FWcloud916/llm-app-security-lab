@@ -38,6 +38,8 @@ llm-security-sandbox = "llm_security_lab.sandboxing_cli:main"
 llm-security-sandbox-report = "llm_security_lab.sandboxing_report_cli:main"
 llm-security-pii = "llm_security_lab.pii_cli:main"
 llm-security-pii-report = "llm_security_lab.pii_report_cli:main"
+llm-security-observability = "llm_security_lab.observability_cli:main"
+llm-security-observability-report = "llm_security_lab.observability_report_cli:main"
 
 [project.optional-dependencies]
 prompt-guard = [
@@ -48,6 +50,9 @@ pii = [
     "en-core-web-sm",
     "presidio-analyzer>=2.2,<3",
     "presidio-anonymizer>=2.2,<3",
+]
+observability = [
+    "opentelemetry-sdk>=1.39,<2",
 ]
 
 [tool.hatch.build.targets.wheel]

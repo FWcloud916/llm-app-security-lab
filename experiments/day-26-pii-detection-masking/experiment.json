@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "day-26-pii-detection-masking",
+  "runner": "deterministic_pii_masking",
+  "profiles": [
+    "raw",
+    "application_rules",
+    "presidio_builtin",
+    "layered"
+  ],
+  "policy": "policy.json",
+  "cases": "cases.json"
+}

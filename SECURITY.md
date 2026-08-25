@@ -93,6 +93,12 @@ This repository contains deliberately vulnerable LLM application-security experi
   only temporary copies of the bundle-owned public and private fixtures. The workload MUST be the
   committed fixed script, MUST NOT interpret model-authored commands, URLs, paths, or shell text,
   and MUST NOT make a network request or create an external side effect.
+- The Day 26 PII bundle MUST use only its 24 labeled synthetic cases and fixed policy. It MAY load
+  the uv-locked Presidio packages and `en_core_web_sm` model already installed in the local
+  environment. It MUST NOT download or update a package or model during a run, call an LLM, access
+  the network, read real personal data, persist an index, or create an external side effect. Raw
+  synthetic values MAY appear only in ignored raw evidence; the sanitized report MUST expose only
+  counts, versions, and fixture hashes.
 - MUST keep raw evidence under `evidence/raw/` or `results/`; both paths are ignored by Git.
 
 The Day 2, Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, Day 14, Day 15,
@@ -115,6 +121,9 @@ not a topic classifier, output classifier, multilingual benchmark, or production
 The Day 25 runner is a bounded least-privilege experiment, not a production authorization service,
 general-purpose command sandbox, container escape assessment, or proof that Docker alone makes an
 Agent safe.
+The Day 26 runner is a small English-language synthetic benchmark, not a production PII inventory,
+Taiwan privacy-law compliance assessment, multilingual benchmark, or proof that masking repairs an
+authorization failure.
 Run experiments on a machine and account that contain no data the selected model should not see.
 
 ## Reporting a problem

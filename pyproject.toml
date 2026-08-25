@@ -36,11 +36,18 @@ llm-security-prompt-guard = "llm_security_lab.prompt_guard_cli:main"
 llm-security-prompt-guard-report = "llm_security_lab.prompt_guard_report_cli:main"
 llm-security-sandbox = "llm_security_lab.sandboxing_cli:main"
 llm-security-sandbox-report = "llm_security_lab.sandboxing_report_cli:main"
+llm-security-pii = "llm_security_lab.pii_cli:main"
+llm-security-pii-report = "llm_security_lab.pii_report_cli:main"
 
 [project.optional-dependencies]
 prompt-guard = [
     "torch>=2.2,<3",
     "transformers>=4.44,<5",
+]
+pii = [
+    "en-core-web-sm",
+    "presidio-analyzer>=2.2,<3",
+    "presidio-anonymizer>=2.2,<3",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -63,3 +70,6 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I", "UP", "B"]
+
+[tool.uv.sources]
+en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }

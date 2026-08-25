@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "synthetic_data_only": true,
+  "cases": [
+    {"id": "input-email", "flow": "input", "text": "Send the update to avery.day26@example.test.", "expected": [{"entity_type": "EMAIL_ADDRESS", "value": "avery.day26@example.test"}]},
+    {"id": "input-phone", "flow": "input", "text": "The synthetic callback number is 0900-000-026.", "expected": [{"entity_type": "PHONE_NUMBER", "value": "0900-000-026"}]},
+    {"id": "input-card", "flow": "input", "text": "Use test card 4242 4242 4242 4242 for the fixture.", "expected": [{"entity_type": "CREDIT_CARD", "value": "4242 4242 4242 4242"}]},
+    {"id": "input-customer", "flow": "input", "text": "Open the synthetic record CUST-2601.", "expected": [{"entity_type": "CUSTOMER_ID", "value": "CUST-2601"}]},
+    {"id": "input-person", "flow": "input", "text": "The fictional contact is Avery Example.", "expected": [{"entity_type": "PERSON", "value": "Avery Example"}]},
+    {"id": "input-mixed", "flow": "input", "text": "Avery Example owns CUST-2602 and uses bailey.day26@example.test.", "expected": [{"entity_type": "PERSON", "value": "Avery Example"}, {"entity_type": "CUSTOMER_ID", "value": "CUST-2602"}, {"entity_type": "EMAIL_ADDRESS", "value": "bailey.day26@example.test"}]},
+    {"id": "output-email", "flow": "output", "text": "Reply address: casey.day26@example.test.", "expected": [{"entity_type": "EMAIL_ADDRESS", "value": "casey.day26@example.test"}]},
+    {"id": "output-phone", "flow": "output", "text": "Callback recorded as 0900-000-027.", "expected": [{"entity_type": "PHONE_NUMBER", "value": "0900-000-027"}]},
+    {"id": "output-card", "flow": "output", "text": "The response repeated 5555 5555 5555 4444.", "expected": [{"entity_type": "CREDIT_CARD", "value": "5555 5555 5555 4444"}]},
+    {"id": "output-customer", "flow": "output", "text": "Summary for CUST-2603 is ready.", "expected": [{"entity_type": "CUSTOMER_ID", "value": "CUST-2603"}]},
+    {"id": "output-person", "flow": "output", "text": "The fictional owner is Bailey Example.", "expected": [{"entity_type": "PERSON", "value": "Bailey Example"}]},
+    {"id": "output-mixed", "flow": "output", "text": "Casey Example uses 0900-000-028 for CUST-2604.", "expected": [{"entity_type": "PERSON", "value": "Casey Example"}, {"entity_type": "PHONE_NUMBER", "value": "0900-000-028"}, {"entity_type": "CUSTOMER_ID", "value": "CUST-2604"}]},
+    {"id": "negative-date", "flow": "input", "text": "The release date is 2026-09-04.", "expected": []},
+    {"id": "negative-duration", "flow": "input", "text": "Retry after 900 milliseconds.", "expected": []},
+    {"id": "negative-build", "flow": "input", "text": "Build 4242 finished successfully.", "expected": []},
+    {"id": "negative-customer-word", "flow": "input", "text": "The customer support queue is open.", "expected": []},
+    {"id": "negative-placeholder", "flow": "input", "text": "Use placeholder <EMAIL_ADDRESS> in the template.", "expected": []},
+    {"id": "negative-row-count", "flow": "input", "text": "The report contains 16 rows.", "expected": []},
+    {"id": "negative-steps", "flow": "output", "text": "Call step 4 after step 2.", "expected": []},
+    {"id": "negative-reference", "flow": "output", "text": "Reference code EXAMPLE-2600 is public.", "expected": []},
+    {"id": "negative-time", "flow": "output", "text": "The public event starts at 09:00.", "expected": []},
+    {"id": "negative-name-like", "flow": "output", "text": "Avery is a severity label in this fixture.", "expected": []},
+    {"id": "negative-card-word", "flow": "output", "text": "The word card appears without a number.", "expected": []},
+    {"id": "negative-customer-shape", "flow": "output", "text": "CUST-ABCD is not a valid customer identifier.", "expected": []}
+  ]
+}

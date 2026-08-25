@@ -64,6 +64,10 @@ This project owns versioned, synthetic-data experiments for the 30-day LLM appli
   enforce the hardened container profile for every full-control path, and MUST NOT interpret
   model-authored commands, make a network request, or create an external side effect (source:
   `SECURITY.md`).
+- Day 26 MUST use only the bundle-owned labeled synthetic PII cases. It MAY load the locked
+  Presidio and `en_core_web_sm` packages from the local environment, but MUST NOT download during a
+  run, call a model, access the network, use real personal data, or create an external side effect
+  (source: `SECURITY.md`).
 - MUST preserve the model, runtime, options, fixture hashes, full request, and observed response for every claimed result (source: `README.md`, `src/llm_security_lab/lab.py`).
 - MUST pass `uv run pytest`, `uv run ruff check .`, and `uv run ruff format --check .` before declaring code changes complete (source: `pyproject.toml`).
 
@@ -111,6 +115,8 @@ uv run --extra prompt-guard --python 3.13 llm-security-prompt-guard-report evide
 uv run llm-security-sandbox --experiment day-25-least-privilege-agent-sandboxing --mode fixed --output evidence/raw/day-25/fixed.json
 uv run llm-security-sandbox --experiment day-25-least-privilege-agent-sandboxing --mode model --output evidence/raw/day-25/model.json
 uv run llm-security-sandbox-report evidence/raw/day-25/fixed.json
+uv run --extra pii llm-security-pii --experiment day-26-pii-detection-masking --output evidence/raw/day-26/results.json
+uv run --extra pii llm-security-pii-report evidence/raw/day-26/results.json
 uv run pytest
 uv run ruff check .
 uv run ruff format --check .

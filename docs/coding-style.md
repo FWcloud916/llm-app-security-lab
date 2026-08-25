@@ -68,6 +68,9 @@ versions MUST stop execution. Code MUST NOT replace a failed check with an impli
 - `sandboxing.py` owns Day 25 strict proposals, deterministic authorization, exact Docker argument
   construction, containment evidence, and sanitized reports. Model-authored text MUST NOT enter a
   shell command or Docker option.
+- `pii.py` owns Day 26 labeled synthetic cases, deterministic patterns, optional Presidio loading,
+  normalized spans, masking metrics, and sanitized reports. Presidio results MUST NOT become an
+  authorization decision.
 - Tests MUST use fake clients; the default unit-test gate MUST NOT call a model or the network.
 - Secrets MUST NOT enter source, fixtures, snapshots, logs, or committed evidence.
 

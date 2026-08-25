@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "version": "day26-pii-policy-v1",
+  "language": "en",
+  "score_threshold": 0.35,
+  "entities": [
+    "EMAIL_ADDRESS",
+    "PHONE_NUMBER",
+    "CREDIT_CARD",
+    "CUSTOMER_ID",
+    "PERSON"
+  ],
+  "application_patterns": {
+    "EMAIL_ADDRESS": "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.test\\b",
+    "PHONE_NUMBER": "\\b09[0-9]{2}(?:-[0-9]{3}){2}\\b",
+    "CREDIT_CARD": "\\b(?:[0-9]{4}[ -]){3}[0-9]{4}\\b",
+    "CUSTOMER_ID": "\\bCUST-[0-9]{4}\\b"
+  }
+}

@@ -28,6 +28,8 @@ A versioned, synthetic-data lab for reproducing the LLM application-security exp
   output sink exists in this extension.
 - Runs the Day 25 least-privilege ablation through exact action, resource, approval, and Docker
   runtime boundaries using only temporary synthetic data and a fixed workload script.
+- Runs the Day 26 offline PII comparison across raw, application-rule, Presidio built-in, and
+  layered detection paths using 24 labeled synthetic cases and fixed masking operators.
 - Preserves stable milestone tags so an article can point to the exact code it described.
 
 ## Quickstart
@@ -283,6 +285,20 @@ uv run llm-security-sandbox \
   --output evidence/raw/day-25/model.json
 uv run llm-security-sandbox-report evidence/raw/day-25/fixed.json
 uv run llm-security-sandbox-report evidence/raw/day-25/model.json
+```
+
+The Day 26 experiment compares application-owned exact patterns with Presidio 2.2.364 and the
+locked `en_core_web_sm` 3.8.0 model. Twelve positive and twelve negative synthetic cases cover
+input and output flows. The runner records entity-level true positives, false positives, false
+negatives, unmasked expected values, and negative cases changed by masking. It does not call a
+model or access the network during a run.
+
+```bash
+uv sync --extra pii
+uv run --extra pii llm-security-pii \
+  --experiment day-26-pii-detection-masking \
+  --output evidence/raw/day-26/results.json
+uv run --extra pii llm-security-pii-report evidence/raw/day-26/results.json
 ```
 
 The Day 15 experiment adds a deterministic, in-memory RAG trace. It compares a clean corpus, the

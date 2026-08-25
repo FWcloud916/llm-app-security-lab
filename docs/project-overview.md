@@ -56,6 +56,8 @@ artifacts and their verification.
 - Day 25 combines strict model proposals with deterministic action, resource, and exact-approval
   checks before an exact Docker adapter. Its fixed ablation removes one control at a time; the
   model plan keeps every executable path on the hardened container profile.
+- Day 26 compares application rules, Presidio built-in recognizers, and a layered registry over one
+  fixed labeled synthetic corpus. It performs no model or network call.
 - Model artifacts are not distributed through this repository.
 
 ## 2. Tech Stack
@@ -64,7 +66,7 @@ artifacts and their verification.
 |---|---|---|
 | Language | Python 3.11+ | Standard-library HTTP and filesystem APIs are sufficient for the baseline. |
 | Environment | uv with `uv.lock` | Locks development dependencies and provides one command surface. |
-| Runtime dependencies | Python standard library + pypdf 6.x + qdrant-client 1.19.x; optional Transformers and PyTorch | Keeps the normal runtime smaller while enabling a local Prompt Guard experiment only when its extra is selected. |
+| Runtime dependencies | Python standard library + pypdf 6.x + qdrant-client 1.19.x; optional Transformers/PyTorch or Presidio/SpaCy | Keeps large or experiment-specific runtimes behind explicit extras. |
 | Test | pytest | Supports offline fake clients, temporary paths, and explicit failure assertions. |
 | Lint and format | Ruff | Provides one configured check and format gate. |
 | Model runtime | Ollama on `127.0.0.1` | Preserves the local-only Day 4 safety boundary. |
@@ -139,6 +141,13 @@ Day 25 fixed or model proposal
     ├─► subject + Agent + resource grant, expiry, and revocation
     ├─► exact reviewed-envelope binding
     └─► exact Docker adapter ──► hardened fixed workload ──► containment evidence
+
+Day 26 fixed labeled synthetic text
+    │
+    ├─► raw path
+    ├─► application-owned deterministic recognizers
+    ├─► Presidio built-in recognizers
+    └─► layered Presidio registry ──► fixed masking ──► span and leakage metrics
 ```
 
 ### Key Principles
@@ -169,6 +178,8 @@ Day 25 fixed or model proposal
 - Day 25 never turns model text into a command line. The proposal selects one declared operation;
   deterministic policy controls decide whether an exact Docker argument vector may run it. Runtime
   containment remains a separate boundary after authorization.
+- Day 26 treats PII detection as evidence, not authorization. A detector profile returns spans;
+  application policy still decides which entities to block, replace, retain, or route for review.
 
 ## 4. Directory Structure
 
@@ -181,6 +192,7 @@ Day 25 fixed or model proposal
 │   ├── supply_chain.py        # Offline artifact-intake matrix and repository metadata audit
 │   ├── agent_chain.py         # Hybrid Agent tool loop and deterministic cut-point matrix
 │   ├── sandboxing.py          # Day 25 policy ablation and exact Docker adapter
+│   ├── pii.py                 # Day 26 fixed PII detection and masking matrix
 │   ├── lab.py                 # Bundle, fixture, digest, request, and evidence flow
 │   ├── knowledge_base.py      # Synthetic publish/revoke/rebuild lifecycle replay
 │   ├── report.py              # Sanitized repeated-run summary
@@ -236,6 +248,8 @@ llm-security-prompt-guard --experiment day-24-prompt-guard-input-rail [--output 
 llm-security-prompt-guard-report <raw-json>
 llm-security-sandbox --experiment day-25-least-privilege-agent-sandboxing --mode {fixed,model} [--output <raw-json>]
 llm-security-sandbox-report <raw-json>
+llm-security-pii --experiment day-26-pii-detection-masking [--output <raw-json>]
+llm-security-pii-report <raw-json>
 ```
 
 The legacy command defaults to `day-04-vulnerable-baseline`. A schema-v2 experiment selects one

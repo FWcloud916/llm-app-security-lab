@@ -74,6 +74,9 @@ versions MUST stop execution. Code MUST NOT replace a failed check with an impli
 - `observability.py` owns Day 27 in-memory OpenTelemetry spans, safe attribute allowlists,
   HMAC-linked audit records, terminal checkpoints, tamper comparisons, and sanitized reports. The
   HMAC key MUST remain process-local and MUST NOT enter evidence.
+- `cost_controls.py` owns Day 28 fixed request and completion events, isolated control cases,
+  admission order, in-memory rate, concurrency, and budget state, and sanitized reports. It MUST
+  NOT call a model, network service, tokenizer, or billing provider.
 - Tests MUST use fake clients; the default unit-test gate MUST NOT call a model or the network.
 - Secrets MUST NOT enter source, fixtures, snapshots, logs, or committed evidence.
 

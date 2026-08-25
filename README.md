@@ -32,6 +32,8 @@ A versioned, synthetic-data lab for reproducing the LLM application-security exp
   layered detection paths using 24 labeled synthetic cases and fixed masking operators.
 - Runs the Day 27 offline OpenTelemetry comparison and an HMAC-linked audit chain over six fixed
   synthetic events, including a terminal-checkpoint truncation test.
+- Runs the Day 28 offline admission-control comparison across request rate, input and output token,
+  total token, concurrency, and fixed-window budget limits using synthetic events only.
 - Preserves stable milestone tags so an article can point to the exact code it described.
 
 ## Quickstart
@@ -316,6 +318,19 @@ uv run --extra observability llm-security-observability \
   --experiment day-27-observability-audit \
   --output evidence/raw/day-27/results.json
 uv run --extra observability llm-security-observability-report evidence/raw/day-27/results.json
+```
+
+The Day 28 experiment compares an intentionally unbounded admission path with a deterministic
+layered-control path. Seven isolated synthetic cases cover normal sequential requests, a request
+burst, oversized input, oversized output reservation, oversized total tokens, a concurrency spike,
+and fixed-window budget exhaustion. The runner uses declared token counts instead of a tokenizer,
+does not call a model or billing provider, and keeps every outcome in memory.
+
+```bash
+uv run llm-security-cost-controls \
+  --experiment day-28-dos-token-cost-controls \
+  --output evidence/raw/day-28/results.json
+uv run llm-security-cost-controls-report evidence/raw/day-28/results.json
 ```
 
 The Day 15 experiment adds a deterministic, in-memory RAG trace. It compares a clean corpus, the

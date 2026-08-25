@@ -60,6 +60,8 @@ artifacts and their verification.
   fixed labeled synthetic corpus. It performs no model or network call.
 - Day 27 compares unsafe and allowlisted OpenTelemetry span attributes, then links six fixed audit
   events with HMAC-SHA-256 and tests the separate terminal-checkpoint boundary.
+- Day 28 compares an unbounded admission path with fixed request-rate, token, concurrency, and
+  budget controls across seven isolated synthetic event sequences.
 - Model artifacts are not distributed through this repository.
 
 ## 2. Tech Stack
@@ -156,6 +158,11 @@ Day 27 fixed synthetic request
     ├─► unsafe OpenTelemetry attributes ──► raw text marker count
     ├─► allowlisted attributes ──► correlation and required-field checks
     └─► six canonical audit events ──► HMAC chain ──► terminal checkpoint
+
+Day 28 fixed synthetic admission events
+    │
+    ├─► unbounded path ──► admitted token and concurrency exposure
+    └─► layered path ──► request rate ──► token limits ──► concurrency ──► budget
 ```
 
 ### Key Principles
@@ -191,6 +198,9 @@ Day 27 fixed synthetic request
 - Day 27 treats trace content and audit integrity as separate controls. Attribute allowlists reduce
   copied sensitive text; HMAC links detect modification but need an independently retained terminal
   checkpoint to detect a valid-prefix truncation.
+- Day 28 treats admission as a deterministic application boundary. Request rate, token size,
+  concurrency, and budget are independent controls; each isolated case prevents an earlier gate
+  from hiding the behavior of a later gate.
 
 ## 4. Directory Structure
 
@@ -205,6 +215,7 @@ Day 27 fixed synthetic request
 │   ├── sandboxing.py          # Day 25 policy ablation and exact Docker adapter
 │   ├── pii.py                 # Day 26 fixed PII detection and masking matrix
 │   ├── observability.py       # Day 27 in-memory spans and HMAC-linked audit events
+│   ├── cost_controls.py       # Day 28 deterministic admission and budget-control matrix
 │   ├── lab.py                 # Bundle, fixture, digest, request, and evidence flow
 │   ├── knowledge_base.py      # Synthetic publish/revoke/rebuild lifecycle replay
 │   ├── report.py              # Sanitized repeated-run summary
@@ -264,6 +275,8 @@ llm-security-pii --experiment day-26-pii-detection-masking [--output <raw-json>]
 llm-security-pii-report <raw-json>
 llm-security-observability --experiment day-27-observability-audit [--output <raw-json>]
 llm-security-observability-report <raw-json>
+llm-security-cost-controls --experiment day-28-dos-token-cost-controls [--output <raw-json>]
+llm-security-cost-controls-report <raw-json>
 ```
 
 The legacy command defaults to `day-04-vulnerable-baseline`. A schema-v2 experiment selects one

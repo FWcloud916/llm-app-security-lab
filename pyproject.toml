@@ -40,6 +40,8 @@ llm-security-pii = "llm_security_lab.pii_cli:main"
 llm-security-pii-report = "llm_security_lab.pii_report_cli:main"
 llm-security-observability = "llm_security_lab.observability_cli:main"
 llm-security-observability-report = "llm_security_lab.observability_report_cli:main"
+llm-security-cost-controls = "llm_security_lab.cost_controls_cli:main"
+llm-security-cost-controls-report = "llm_security_lab.cost_controls_report_cli:main"
 
 [project.optional-dependencies]
 prompt-guard = [

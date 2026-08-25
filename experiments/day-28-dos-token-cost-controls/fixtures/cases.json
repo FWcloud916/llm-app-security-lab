@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "synthetic_data_only": true,
+  "cases": [
+    {
+      "id": "clean_sequential",
+      "events": [
+        {"kind": "request", "at_ms": 0, "request_id": "clean-1", "subject_id": "synthetic-clean", "input_tokens": 40, "max_output_tokens": 40},
+        {"kind": "complete", "at_ms": 1, "request_id": "clean-1", "actual_output_tokens": 20},
+        {"kind": "request", "at_ms": 2, "request_id": "clean-2", "subject_id": "synthetic-clean", "input_tokens": 30, "max_output_tokens": 40},
+        {"kind": "complete", "at_ms": 3, "request_id": "clean-2", "actual_output_tokens": 30}
+      ],
+      "expected": {"unbounded_admitted": 2, "controlled_admitted": 2, "controlled_rejections": {}, "controlled_peak_concurrency": 1}
+    },
+    {
+      "id": "request_rate_burst",
+      "events": [
+        {"kind": "request", "at_ms": 0, "request_id": "rate-1", "subject_id": "synthetic-rate", "input_tokens": 10, "max_output_tokens": 10},
+        {"kind": "complete", "at_ms": 1, "request_id": "rate-1", "actual_output_tokens": 5},
+        {"kind": "request", "at_ms": 1000, "request_id": "rate-2", "subject_id": "synthetic-rate", "input_tokens": 10, "max_output_tokens": 10},
+        {"kind": "complete", "at_ms": 1001, "request_id": "rate-2", "actual_output_tokens": 5},
+        {"kind": "request", "at_ms": 2000, "request_id": "rate-3", "subject_id": "synthetic-rate", "input_tokens": 10, "max_output_tokens": 10},
+        {"kind": "complete", "at_ms": 2001, "request_id": "rate-3", "actual_output_tokens": 5},
+        {"kind": "request", "at_ms": 3000, "request_id": "rate-4", "subject_id": "synthetic-rate", "input_tokens": 10, "max_output_tokens": 10},
+        {"kind": "complete", "at_ms": 3001, "request_id": "rate-4", "actual_output_tokens": 5},
+        {"kind": "request", "at_ms": 4000, "request_id": "rate-5", "subject_id": "synthetic-rate", "input_tokens": 10, "max_output_tokens": 10},
+        {"kind": "complete", "at_ms": 4001, "request_id": "rate-5", "actual_output_tokens": 5},
+        {"kind": "request", "at_ms": 5000, "request_id": "rate-6", "subject_id": "synthetic-rate", "input_tokens": 10, "max_output_tokens": 10},
+        {"kind": "complete", "at_ms": 5001, "request_id": "rate-6", "actual_output_tokens": 5},
+        {"kind": "request", "at_ms": 6000, "request_id": "rate-7", "subject_id": "synthetic-rate", "input_tokens": 10, "max_output_tokens": 10},
+        {"kind": "complete", "at_ms": 6001, "request_id": "rate-7", "actual_output_tokens": 5}
+      ],
+      "expected": {"unbounded_admitted": 7, "controlled_admitted": 5, "controlled_rejections": {"request_rate_limit": 2}, "controlled_peak_concurrency": 1}
+    },
+    {
+      "id": "input_token_exhaustion",
+      "events": [
+        {"kind": "request", "at_ms": 0, "request_id": "input-1", "subject_id": "synthetic-input", "input_tokens": 101, "max_output_tokens": 10}
+      ],
+      "expected": {"unbounded_admitted": 1, "controlled_admitted": 0, "controlled_rejections": {"input_token_limit": 1}, "controlled_peak_concurrency": 0}
+    },
+    {
+      "id": "output_token_reservation",
+      "events": [
+        {"kind": "request", "at_ms": 0, "request_id": "output-1", "subject_id": "synthetic-output", "input_tokens": 10, "max_output_tokens": 101}
+      ],
+      "expected": {"unbounded_admitted": 1, "controlled_admitted": 0, "controlled_rejections": {"output_token_limit": 1}, "controlled_peak_concurrency": 0}
+    },
+    {
+      "id": "total_token_exhaustion",
+      "events": [
+        {"kind": "request", "at_ms": 0, "request_id": "total-1", "subject_id": "synthetic-total", "input_tokens": 80, "max_output_tokens": 80}
+      ],
+      "expected": {"unbounded_admitted": 1, "controlled_admitted": 0, "controlled_rejections": {"total_token_limit": 1}, "controlled_peak_concurrency": 0}
+    },
+    {
+      "id": "concurrency_spike",
+      "events": [
+        {"kind": "request", "at_ms": 0, "request_id": "concurrency-1", "subject_id": "synthetic-concurrency", "input_tokens": 10, "max_output_tokens": 10},
+        {"kind": "request", "at_ms": 1, "request_id": "concurrency-2", "subject_id": "synthetic-concurrency", "input_tokens": 10, "max_output_tokens": 10},
+        {"kind": "request", "at_ms": 2, "request_id": "concurrency-3", "subject_id": "synthetic-concurrency", "input_tokens": 10, "max_output_tokens": 10}
+      ],
+      "expected": {"unbounded_admitted": 3, "controlled_admitted": 2, "controlled_rejections": {"concurrency_limit": 1}, "controlled_peak_concurrency": 2}
+    },
+    {
+      "id": "budget_exhaustion",
+      "events": [
+        {"kind": "request", "at_ms": 0, "request_id": "budget-1", "subject_id": "synthetic-budget", "input_tokens": 60, "max_output_tokens": 40},
+        {"kind": "complete", "at_ms": 1, "request_id": "budget-1", "actual_output_tokens": 40},
+        {"kind": "request", "at_ms": 2, "request_id": "budget-2", "subject_id": "synthetic-budget", "input_tokens": 60, "max_output_tokens": 40},
+        {"kind": "complete", "at_ms": 3, "request_id": "budget-2", "actual_output_tokens": 40},
+        {"kind": "request", "at_ms": 4, "request_id": "budget-3", "subject_id": "synthetic-budget", "input_tokens": 60, "max_output_tokens": 40},
+        {"kind": "complete", "at_ms": 5, "request_id": "budget-3", "actual_output_tokens": 40},
+        {"kind": "request", "at_ms": 6, "request_id": "budget-4", "subject_id": "synthetic-budget", "input_tokens": 60, "max_output_tokens": 40},
+        {"kind": "complete", "at_ms": 7, "request_id": "budget-4", "actual_output_tokens": 40}
+      ],
+      "expected": {"unbounded_admitted": 4, "controlled_admitted": 3, "controlled_rejections": {"budget_limit": 1}, "controlled_peak_concurrency": 1}
+    }
+  ]
+}

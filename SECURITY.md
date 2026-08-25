@@ -106,6 +106,13 @@ This repository contains deliberately vulnerable LLM application-security experi
   personal data, or create an external side effect. Raw synthetic text and complete audit records
   MAY appear only in ignored raw evidence; sanitized reports MUST expose only counts, versions,
   verification outcomes, and fixture hashes.
+- The Day 28 cost-control bundle MUST use only its fixed synthetic request and completion events,
+  synthetic subject identifiers, token counts, and rate, token, concurrency, and budget policy. It
+  MAY compare an intentionally unbounded in-memory path with the complete deterministic control
+  path. It MUST NOT call a model, access the network, contact a billing provider, use real identity
+  or payment data, or create an external side effect. Complete request and subject identifiers MAY
+  appear only in ignored raw evidence; sanitized reports MUST expose only case IDs, counts,
+  rejection reasons, fixture hashes, and resource totals.
 - MUST keep raw evidence under `evidence/raw/` or `results/`; both paths are ignored by Git.
 
 The Day 2, Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, Day 14, Day 15,
@@ -134,6 +141,9 @@ authorization failure.
 The Day 27 runner is an offline trace-and-integrity prototype, not a production telemetry backend,
 SIEM, key-management system, append-only storage service, or proof that HMAC prevents authorized
 deletion. Tail truncation requires an independently retained terminal checkpoint.
+The Day 28 runner is an offline admission-control simulator, not a production gateway, distributed
+rate limiter, tokenizer, queue, billing ledger, or proof that one subject identifier prevents
+distributed abuse. Its token counts and budget units are fixed synthetic fixture values.
 Run experiments on a machine and account that contain no data the selected model should not see.
 
 ## Reporting a problem

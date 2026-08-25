@@ -1,0 +1,24 @@
+Experiment: day-28-dos-token-cost-controls
+Generated at: 2026-08-25T08:46:10.753541+00:00
+Policy version: day28-cost-control-policy-v1
+
+Aggregate profiles:
+- unbounded: requests=19, admitted=19, rejected=0, estimated_tokens=1132, peak_concurrency=3, budget_overrun=100
+- layered_controls: requests=19, admitted=12, rejected=7, estimated_tokens=590, peak_concurrency=2, budget_overrun=0
+- controlled_rejection_reasons={"budget_limit": 1, "concurrency_limit": 1, "input_token_limit": 1, "output_token_limit": 1, "request_rate_limit": 2, "total_token_limit": 1}
+
+Cases:
+- clean_sequential: unbounded_admitted=2, controlled_admitted=2, controlled_rejections={}, controlled_peak=1
+- request_rate_burst: unbounded_admitted=7, controlled_admitted=5, controlled_rejections={"request_rate_limit": 2}, controlled_peak=1
+- input_token_exhaustion: unbounded_admitted=1, controlled_admitted=0, controlled_rejections={"input_token_limit": 1}, controlled_peak=0
+- output_token_reservation: unbounded_admitted=1, controlled_admitted=0, controlled_rejections={"output_token_limit": 1}, controlled_peak=0
+- total_token_exhaustion: unbounded_admitted=1, controlled_admitted=0, controlled_rejections={"total_token_limit": 1}, controlled_peak=0
+- concurrency_spike: unbounded_admitted=3, controlled_admitted=2, controlled_rejections={"concurrency_limit": 1}, controlled_peak=2
+- budget_exhaustion: unbounded_admitted=4, controlled_admitted=3, controlled_rejections={"budget_limit": 1}, controlled_peak=1
+
+Prediction checks: {"budget_exhaustion": true, "clean_sequential": true, "concurrency_spike": true, "input_token_exhaustion": true, "output_token_reservation": true, "request_rate_burst": true, "total_token_exhaustion": true}
+Synthetic data only: true
+Model calls: 0
+Network calls: 0
+External side effects: 0
+Real billing events: 0

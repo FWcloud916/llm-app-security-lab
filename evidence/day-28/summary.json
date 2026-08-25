@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "experiment_id": "day-28-dos-token-cost-controls",
+  "runner": "deterministic_cost_controls",
+  "runner_commit": "85bc250",
+  "raw_sha256": "904e979a69e6372e55eca761b02ed78da29ed80a6762a405686a81948afeb72a",
+  "recorded_at": "2026-08-25T08:46:10.753541+00:00",
+  "policy_version": "day28-cost-control-policy-v1",
+  "fixtures": {
+    "policy_sha256": "94cf5b59965607500040451f5862f77d11bca99246c2f55f09e6b79bff5a2d43",
+    "cases_sha256": "606a382a19d7f894b504fab0aca53578059111e79a9a4b0cac996dc81e883274"
+  },
+  "profiles": {
+    "unbounded": {
+      "requests_seen": 19,
+      "admitted_requests": 19,
+      "rejected_requests": 0,
+      "peak_concurrency": 3,
+      "estimated_tokens_admitted": 1132,
+      "settled_token_units": 625,
+      "remaining_reserved_token_units": 442,
+      "budget_overrun_token_units": 100
+    },
+    "layered_controls": {
+      "requests_seen": 19,
+      "admitted_requests": 12,
+      "rejected_requests": 7,
+      "rejection_reasons": {
+        "budget_limit": 1,
+        "concurrency_limit": 1,
+        "input_token_limit": 1,
+        "output_token_limit": 1,
+        "request_rate_limit": 2,
+        "total_token_limit": 1
+      },
+      "peak_concurrency": 2,
+      "estimated_tokens_admitted": 590,
+      "settled_token_units": 495,
+      "remaining_reserved_token_units": 40,
+      "budget_overrun_token_units": 0
+    }
+  },
+  "prediction_checks": {
+    "clean_sequential": true,
+    "request_rate_burst": true,
+    "input_token_exhaustion": true,
+    "output_token_reservation": true,
+    "total_token_exhaustion": true,
+    "concurrency_spike": true,
+    "budget_exhaustion": true
+  },
+  "safety_boundary": {
+    "synthetic_data_only": true,
+    "model_calls": 0,
+    "network_calls": 0,
+    "external_side_effects": 0,
+    "real_billing_events": 0
+  }
+}

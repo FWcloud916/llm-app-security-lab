@@ -34,6 +34,8 @@ A versioned, synthetic-data lab for reproducing the LLM application-security exp
   synthetic events, including a terminal-checkpoint truncation test.
 - Runs the Day 28 offline admission-control comparison across request rate, input and output token,
   total token, concurrency, and fixed-window budget limits using synthetic events only.
+- Runs the Day 29 bounded garak and PyRIT integration against one intentionally vulnerable
+  deterministic loopback endpoint, using separate uv-locked tool environments.
 - Preserves stable milestone tags so an article can point to the exact code it described.
 
 ## Quickstart
@@ -331,6 +333,21 @@ uv run llm-security-cost-controls \
   --experiment day-28-dos-token-cost-controls \
   --output evidence/raw/day-28/results.json
 uv run llm-security-cost-controls-report evidence/raw/day-28/results.json
+```
+
+The Day 29 experiment runs garak 0.16.0 and PyRIT 1.0.1 against the same synthetic endpoint. Their
+current dataset dependencies conflict, so each tool uses its own Python 3.12 lock and environment.
+The formal matrix sends four garak prompts and five PyRIT cases; no model or external service is
+called.
+
+```bash
+uv sync --project experiments/day-29-ai-red-teaming/tooling/garak --python 3.12
+uv sync --project experiments/day-29-ai-red-teaming/tooling/pyrit --python 3.12
+uv run llm-security-red-team \
+  --experiment day-29-ai-red-teaming \
+  --runtime-dir results/day-29 \
+  --output evidence/raw/day-29/results.json
+uv run llm-security-red-team-report evidence/raw/day-29/results.json
 ```
 
 The Day 15 experiment adds a deterministic, in-memory RAG trace. It compares a clean corpus, the

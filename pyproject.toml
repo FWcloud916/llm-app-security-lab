@@ -42,6 +42,8 @@ llm-security-observability = "llm_security_lab.observability_cli:main"
 llm-security-observability-report = "llm_security_lab.observability_report_cli:main"
 llm-security-cost-controls = "llm_security_lab.cost_controls_cli:main"
 llm-security-cost-controls-report = "llm_security_lab.cost_controls_report_cli:main"
+llm-security-red-team = "llm_security_lab.red_teaming_cli:main"
+llm-security-red-team-report = "llm_security_lab.red_teaming_report_cli:main"
 
 [project.optional-dependencies]
 prompt-guard = [

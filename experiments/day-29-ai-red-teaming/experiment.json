@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "day-29-ai-red-teaming",
+  "runner": "bounded_red_team",
+  "endpoint": "http://127.0.0.1:18029/generate",
+  "max_total_requests": 9,
+  "tools": {
+    "garak": {
+      "version": "0.16.0",
+      "python": "tooling/garak/.venv/bin/python",
+      "lockfile": "tooling/garak/uv.lock",
+      "config": "garak.yaml",
+      "max_requests": 4
+    },
+    "pyrit": {
+      "version": "1.0.1",
+      "python": "tooling/pyrit/.venv/bin/python",
+      "lockfile": "tooling/pyrit/uv.lock",
+      "driver": "tooling/pyrit/run_pyrit.py",
+      "cases": "pyrit-cases.json",
+      "max_requests": 5
+    }
+  }
+}

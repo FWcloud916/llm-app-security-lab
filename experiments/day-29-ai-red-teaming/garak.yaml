@@ -1,0 +1,23 @@
+system:
+  parallel_requests: 1
+  parallel_attempts: 1
+  narrow_output: true
+run:
+  seed: 29
+  generations: 1
+  soft_probe_prompt_cap: 4
+plugins:
+  generators:
+    rest:
+      RestGenerator:
+        uri: http://127.0.0.1:18029/generate
+        req_template_json_object:
+          source: garak
+          prompt: $INPUT
+        response_json: true
+        response_json_field: text
+        request_timeout: 5
+        verify_ssl: true
+reporting:
+  report_dir: reports
+  confidence_interval_method: none

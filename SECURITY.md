@@ -113,6 +113,15 @@ This repository contains deliberately vulnerable LLM application-security experi
   or payment data, or create an external side effect. Complete request and subject identifiers MAY
   appear only in ignored raw evidence; sanitized reports MUST expose only case IDs, counts,
   rejection reasons, fixture hashes, and resource totals.
+- The Day 29 red-team bundle MAY start garak 0.16.0 and PyRIT 1.0.1 through exact argument vectors
+  from separate uv-locked Python 3.12 environments. Both tools MUST target only the fixed
+  http://127.0.0.1:18029/generate synthetic endpoint. The run MUST remain capped at four garak
+  requests and five PyRIT requests, MUST force non-loopback HTTP traffic through a closed local
+  proxy, and MUST set model download clients to offline mode. It MUST NOT call a model, use real
+  data, contact an external service, execute a returned action, or create an external side effect.
+  Complete attack prompts and responses MAY appear only in ignored raw evidence; sanitized reports
+  MUST expose only tool versions, lock hashes, case IDs, request counts, finding counts, and
+  prediction checks.
 - MUST keep raw evidence under `evidence/raw/` or `results/`; both paths are ignored by Git.
 
 The Day 2, Day 4, Day 5, Day 7, Day 8, Day 9, Day 10, Day 11, Day 12, Day 13, Day 14, Day 15,
@@ -144,6 +153,9 @@ deletion. Tail truncation requires an independently retained terminal checkpoint
 The Day 28 runner is an offline admission-control simulator, not a production gateway, distributed
 rate limiter, tokenizer, queue, billing ledger, or proof that one subject identifier prevents
 distributed abuse. Its token counts and budget units are fixed synthetic fixture values.
+The Day 29 runner verifies one bounded integration with two scanners and an intentionally vulnerable
+deterministic endpoint. It is not a general red-team assessment, model benchmark, harmful-content
+evaluation, production penetration test, or proof that finding counts are comparable across tools.
 Run experiments on a machine and account that contain no data the selected model should not see.
 
 ## Reporting a problem

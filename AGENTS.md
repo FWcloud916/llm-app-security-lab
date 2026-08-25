@@ -76,6 +76,11 @@ This project owns versioned, synthetic-data experiments for the 30-day LLM appli
   rate, token, concurrency, and budget policy. It MUST NOT call a model, access the network, create
   a real billing event, use real identity or payment data, or create an external side effect
   (source: `SECURITY.md`).
+- Day 29 MAY start only the separately uv-locked garak 0.16.0 and PyRIT 1.0.1 environments through
+  exact argument vectors. Both tools MUST target the fixed loopback synthetic endpoint, remain
+  within their four- and five-request caps, and MUST NOT call a model, reach an external network,
+  use real data, execute returned actions, or create an external side effect (source:
+  `SECURITY.md`).
 - MUST preserve the model, runtime, options, fixture hashes, full request, and observed response for every claimed result (source: `README.md`, `src/llm_security_lab/lab.py`).
 - MUST pass `uv run pytest`, `uv run ruff check .`, and `uv run ruff format --check .` before declaring code changes complete (source: `pyproject.toml`).
 
@@ -129,6 +134,8 @@ uv run --extra observability llm-security-observability --experiment day-27-obse
 uv run --extra observability llm-security-observability-report evidence/raw/day-27/results.json
 uv run llm-security-cost-controls --experiment day-28-dos-token-cost-controls --output evidence/raw/day-28/results.json
 uv run llm-security-cost-controls-report evidence/raw/day-28/results.json
+uv run llm-security-red-team --experiment day-29-ai-red-teaming --runtime-dir results/day-29 --output evidence/raw/day-29/results.json
+uv run llm-security-red-team-report evidence/raw/day-29/results.json
 uv run pytest
 uv run ruff check .
 uv run ruff format --check .

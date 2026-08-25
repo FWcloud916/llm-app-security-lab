@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "experiment_id": "day-27-observability-audit",
+  "runner": "deterministic_observability_audit",
+  "runner_commit": "e1caf53",
+  "raw_sha256": "a9ab1815fa4de7b8f22afe8812e6dd17049c5913bbf403ecf9bdb19bf971b1ed",
+  "recorded_at": "2026-08-25T07:04:40.030981+00:00",
+  "tooling": {
+    "opentelemetry_sdk": "1.44.0",
+    "audit_hmac": "HMAC-SHA-256"
+  },
+  "fixtures": {
+    "policy_sha256": "737f3f1a37aa33cf1c195537f3dc106fdbf2cddbcd3883ffa927f63e1767cd07",
+    "events_sha256": "8297becfa2928cf40a5f7eb96fae83d16de9b95d5423f0aae195ddb67d901a7c"
+  },
+  "profiles": {
+    "unsafe_attributes": {
+      "spans": 7,
+      "marker_hits": 4,
+      "spans_with_sensitive_values": 2
+    },
+    "safe_attributes": {
+      "spans": 7,
+      "marker_hits": 0,
+      "spans_with_sensitive_values": 0,
+      "allowlist_violations": 0,
+      "spans_missing_required_attributes": 0,
+      "one_trace_id": true
+    }
+  },
+  "audit": {
+    "records": 6,
+    "clean_valid": true,
+    "registered_tamper_cases": 5,
+    "detected_tamper_cases": 5,
+    "tail_with_checkpoint_valid": false,
+    "tail_without_checkpoint_valid": true,
+    "key_persisted": false
+  },
+  "prediction_checks": {
+    "unsafe_trace_contains_every_marker": true,
+    "safe_trace_contains_no_marker": true,
+    "safe_trace_uses_only_allowlisted_attributes": true,
+    "safe_trace_has_required_correlation": true,
+    "clean_audit_chain_verifies": true,
+    "checkpoint_detects_all_registered_tampering": true,
+    "tail_truncation_requires_checkpoint": true
+  },
+  "safety_boundary": {
+    "synthetic_data_only": true,
+    "model_calls": 0,
+    "network_calls": 0,
+    "external_side_effects": 0
+  }
+}

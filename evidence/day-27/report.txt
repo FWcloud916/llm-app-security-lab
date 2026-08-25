@@ -1,0 +1,18 @@
+Experiment: day-27-observability-audit
+Generated at: 2026-08-25T07:04:40.030981+00:00
+OpenTelemetry SDK: 1.44.0
+
+Trace profiles:
+- unsafe_attributes: spans=7, marker_hits=4, spans_with_sensitive_values=2
+- safe_attributes: spans=7, marker_hits=0, allowlist_violations=0, missing_required=0, one_trace_id=true
+
+Audit chain:
+- records=6, clean_valid=true
+- registered_tamper_cases=5, detected=5
+- tail_without_checkpoint_valid=true
+
+Prediction checks: {"checkpoint_detects_all_registered_tampering": true, "clean_audit_chain_verifies": true, "safe_trace_contains_no_marker": true, "safe_trace_has_required_correlation": true, "safe_trace_uses_only_allowlisted_attributes": true, "tail_truncation_requires_checkpoint": true, "unsafe_trace_contains_every_marker": true}
+Synthetic data only: true
+Model calls: 0
+Network calls: 0
+External side effects: 0

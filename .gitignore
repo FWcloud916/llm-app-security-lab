@@ -9,5 +9,6 @@ __pycache__/
 .ruff_cache/
 evidence/raw/
 results/
+experiments/*/runtime/
 *.pem
 *.key

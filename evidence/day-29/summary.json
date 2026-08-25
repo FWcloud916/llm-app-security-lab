@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "experiment_id": "day-29-ai-red-teaming",
+  "runner": "bounded_red_team",
+  "runner_commit": "18d28c7",
+  "raw_sha256": "5345c0942e055b73e660d462a72d4f9230cc1aea56881eaa4246b9658d819297",
+  "recorded_at": "2026-08-25T11:06:39.985312+00:00",
+  "endpoint": "http://127.0.0.1:18029/generate",
+  "fixtures": {
+    "garak_lock_sha256": "2ce39dd139076a01ef4bbb2cd3d0601f9879c46e6ddf28b5173aa6617bd4ccd3",
+    "pyrit_lock_sha256": "18d02971d3e54bb35fd7485672e15457566a8f73a1ee76cd060527e03eee2985",
+    "pyrit_cases_sha256": "415aa8e7ad9dfe41268f94b800b07df0c2a81c1f33fdb791e18f76e5e8b5f41d"
+  },
+  "tools": {
+    "garak": {
+      "version": "0.16.0",
+      "attempts": 4,
+      "findings": 4
+    },
+    "pyrit": {
+      "version": "1.0.1",
+      "attempts": 5,
+      "attack_findings": 4,
+      "control_findings": 0
+    }
+  },
+  "prediction_checks": {
+    "garak_detected_all_injected_markers": true,
+    "pyrit_detected_all_attack_markers": true,
+    "pyrit_control_remained_clean": true
+  },
+  "safety_boundary": {
+    "synthetic_data_only": true,
+    "model_calls": 0,
+    "loopback_network_calls": 9,
+    "external_network_calls": 0,
+    "external_side_effects": 0
+  }
+}

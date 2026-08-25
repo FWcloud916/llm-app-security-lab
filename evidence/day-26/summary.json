@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "experiment_id": "day-26-pii-detection-masking",
+  "runner": "deterministic_pii_masking",
+  "runner_commit": "3013add",
+  "raw_sha256": "87c10813ebb5eb6eb6db6a3e0b8a9a930dadd08a53034f9385fbc61eb2eaba61",
+  "recorded_at": "2026-08-25T04:02:45.839320+00:00",
+  "tooling": {
+    "presidio_analyzer": "2.2.364",
+    "presidio_anonymizer": "2.2.364",
+    "nlp_model": "en_core_web_sm==3.8.0"
+  },
+  "fixtures": {
+    "policy_sha256": "44688b339af95b0f1aca0fe5341050f02c7cb71afc2c502367ee2cd90058cb75",
+    "cases_sha256": "b97c50cdd90a86e82308da3f74755bbb21acef0a86c3e7b6ad17b35a25237666"
+  },
+  "matrix": {
+    "cases": 24,
+    "positive_cases": 12,
+    "negative_cases": 12,
+    "expected_entities": 16,
+    "profiles": 4,
+    "path_evaluations": 96
+  },
+  "profiles": {
+    "raw": {"true_positive": 0, "false_positive": 0, "false_negative": 16, "precision": null, "recall": 0.0, "unmasked": 16, "changed_negatives": 0},
+    "application_rules": {"true_positive": 12, "false_positive": 0, "false_negative": 4, "precision": 1.0, "recall": 0.75, "unmasked": 4, "changed_negatives": 0},
+    "presidio_builtin": {"true_positive": 5, "false_positive": 0, "false_negative": 11, "precision": 1.0, "recall": 0.3125, "unmasked": 11, "changed_negatives": 0},
+    "layered": {"true_positive": 12, "false_positive": 0, "false_negative": 4, "precision": 1.0, "recall": 0.75, "unmasked": 4, "changed_negatives": 0}
+  },
+  "prediction_checks": {
+    "raw_leaks_every_expected_value": true,
+    "application_rules_miss_person": true,
+    "application_rules_have_no_false_positives": true,
+    "layered_recall_not_lower_than_either_detector": true
+  },
+  "safety_boundary": {
+    "synthetic_data_only": true,
+    "model_calls": 0,
+    "network_calls": 0,
+    "external_side_effects": 0
+  }
+}

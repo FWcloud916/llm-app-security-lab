@@ -1,0 +1,20 @@
+Experiment: day-26-pii-detection-masking
+Generated at: 2026-08-25T04:02:45.839320+00:00
+Presidio: 2.2.364
+NLP model: en_core_web_sm==3.8.0
+
+Profile results:
+- raw: tp=0, fp=0, fn=16, precision=None, recall=0.0, unmasked=16, changed_negatives=0
+- application_rules: tp=12, fp=0, fn=4, precision=1.0, recall=0.75, unmasked=4, changed_negatives=0
+- presidio_builtin: tp=5, fp=0, fn=11, precision=1.0, recall=0.3125, unmasked=11, changed_negatives=0
+- layered: tp=12, fp=0, fn=4, precision=1.0, recall=0.75, unmasked=4, changed_negatives=0
+
+Flows:
+- input: 48 evaluations
+- output: 48 evaluations
+
+Prediction checks: {"application_rules_have_no_false_positives": true, "application_rules_miss_person": true, "layered_recall_not_lower_than_either_detector": true, "raw_leaks_every_expected_value": true}
+Synthetic data only: true
+Model calls: 0
+Network calls: 0
+External side effects: 0
